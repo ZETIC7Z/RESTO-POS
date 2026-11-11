@@ -1,0 +1,17 @@
+{
+  "name": "Ligaya Kusina Express — Smart POS",
+  "short_name": "Ligaya POS",
+  "description": "Smart Restaurant & Fast-Food Point of Sale System — Lamitan City, Basilan, Philippines",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0b0d13",
+  "theme_color": "#0b0d13",
+  "icons": [
+    {
+      "src": "/icons/icon-burger.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

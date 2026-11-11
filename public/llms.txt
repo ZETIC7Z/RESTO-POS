@@ -1,0 +1,14 @@
+# POSFood — Flutter Point of Sale (POS) App UI
+
+> A modern, responsive Point of Sale (POS) restaurant order management UI cloned from `https://github.com/ZETIC7Z/flutter-pos-app-ui` and running locally with full interactive POS capabilities.
+
+## Features
+- Side navigation menu with animated selections (`Home`, `Menu`, `History`, `Promos`, `Settings`)
+- Food category filtering (`Burger`, `Noodles`, `Drinks`, `Desserts`)
+- Product grid view with high-resolution item photography, stock badges, and click-to-order
+- Interactive Order Management system (`Table 8` and multi-table support)
+- Order summary with live Subtotal, Tax, Promo Discount, Total calculations, and thermal receipt printing
+- Dark theme (`#1f2029` / `#17181f`) with Deep Orange (`#ff6e40` / `#ff5722`) accents
+
+## Developer
+- Sam Pangilinan (`ZETICUZ` / `ZETIC7Z`) — https://www.zeticuz.xyz/
