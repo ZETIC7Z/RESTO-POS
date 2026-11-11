@@ -37,3 +37,10 @@
   - `npm run dev`
 - Local PC URL: `http://localhost:5173/`
 - Tablet / Mobile Wi-Fi LAN URL: `http://192.168.254.105:5173/` (or click **View QR / Tablet QR Connect** inside the app and scan with any tablet/phone camera).
+
+## 5. GitHub Repository & Publishing
+- **Repository URL**: `https://github.com/ZETIC7Z/RESTO-POS`
+- **Visibility**: Public
+- **License**: MIT License (Copyright © 2026 Sam Pangilinan / ZETICUZ / ZETIC7Z)
+- **Topics**: `point-of-sale`, `restaurant-pos`, `fast-food`, `react`, `typescript`, `tailwindcss`, `qr-code`, `philippines`
+
