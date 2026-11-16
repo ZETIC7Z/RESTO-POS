@@ -1,12 +1,25 @@
+# Environment files
+.env
+.env*
+!.env.example
+
+# Vercel
+.vercel/
+
 # Node & Build artifacts
 node_modules/
 dist/
 dist-ssr/
+dist-electron/
+installer/
+release/
+server-dist/
 *.local
 tsconfig.tsbuildinfo
 .playwright-mcp/
 restaurant-pos/
 /data/
+public/items/elfarm/
 
 # Logs
 *.log

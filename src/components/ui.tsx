@@ -187,3 +187,54 @@ export function useFullscreen() {
     (navigator as Navigator & { standalone?: boolean }).standalone === true;
   return { isFs: isFs || standalone, toggle, supported: !!document.documentElement.requestFullscreen };
 }
+
+export function BrandLogo({
+  size = 'md',
+  alt = 'EL Farm Cafe',
+  className,
+}: {
+  size?: 'md' | 'lg';
+  alt?: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cx(
+        'relative shrink-0 overflow-hidden rounded-2xl border border-amber-400/45 bg-black shadow-[inset_0_1px_0_rgba(255,215,128,0.35),0_12px_28px_-8px_rgba(245,158,11,0.55)]',
+        size === 'lg' ? 'h-14 w-14' : 'h-11 w-11 sm:h-12 sm:w-12',
+        className
+      )}
+    >
+      <img
+        src="/el-farm-logo.jpg"
+        alt={alt}
+        className="h-full w-full object-cover"
+      />
+    </div>
+  );
+}
+
+export function DeveloperFooter({ className }: { className?: string }) {
+  return (
+    <footer
+      className={cx(
+        'flex flex-col items-center justify-center gap-1.5 py-2 text-center text-xs text-white/50',
+        className
+      )}
+    >
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <img src="/zeticuz-logo.svg" alt="ZETICUZ" className="h-4 w-4 opacity-85" />
+        <span className="font-semibold tracking-wide text-white/70">
+          SITE DEVELOPED BY: Sam Pangilinan · © 2026
+        </span>
+        <button
+          type="button"
+          onClick={() => window.open('https://www.zeticuz.xyz/', '_blank', 'noopener,noreferrer')}
+          className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-0.5 text-[11px] font-bold text-orange-300 transition hover:border-orange-400/40 hover:bg-orange-500/15"
+        >
+          Explore Developer Portfolio &amp; Projects ↗
+        </button>
+      </div>
+    </footer>
+  );
+}

@@ -1,33 +1,82 @@
+import { useEffect } from 'react';
 import QRCode from 'react-qr-code';
 import {
-  Expense,
   fmtDateTime,
   fmtDayLong,
-  Order,
+  OrderRow,
   PaymentMethod,
   PAYMENT_METHODS,
   peso,
-  Settings,
+  StoreSettings,
 } from '../data/posData';
 import { Btn, Modal } from './ui';
 
 export function ReceiptModal({
   order,
   settings,
+  autoPrint = false,
   onClose,
   onNewOrder,
 }: {
-  order: Order;
-  settings: Settings;
+  order: OrderRow;
+  settings: StoreSettings;
+  autoPrint?: boolean;
   onClose: () => void;
   onNewOrder?: () => void;
 }) {
-  const printNow = () => window.print();
+  useEffect(() => {
+    if (!autoPrint) return;
+    const t = window.setTimeout(() => {
+      try {
+        window.print();
+      } catch {
+        /* print dialog blocked or unavailable */
+      }
+    }, 350);
+    return () => window.clearTimeout(t);
+  }, [autoPrint, order.id]);
+
+  const snap = order.receipt_snapshot || {};
+  const items =
+    order.order_items && order.order_items.length > 0
+      ? order.order_items.map((i) => ({
+          key: i.id,
+          product_name: i.product_name,
+          quantity: i.quantity,
+          unit_price: Number(i.unit_price),
+        }))
+      : (snap.items || []).map((i, idx) => ({
+          key: `${i.product_id}-${idx}`,
+          product_name: i.product_name,
+          quantity: i.quantity,
+          unit_price: Number(i.unit_price),
+        }));
+
+  const subTotal =
+    typeof snap.sub_total === 'number'
+      ? snap.sub_total
+      : items.reduce((s, i) => s + i.quantity * i.unit_price, 0);
+
+  const lessVat =
+    typeof snap.less_vat === 'number'
+      ? snap.less_vat
+      : order.discount_type === 'senior_pwd'
+      ? Math.max(0, subTotal - subTotal / 1.12)
+      : 0;
+
+  const vatExempt =
+    typeof snap.vat_exempt === 'number'
+      ? snap.vat_exempt
+      : order.discount_type === 'senior_pwd'
+      ? subTotal / 1.12
+      : 0;
 
   return (
     <Modal
-      title={`Official Receipt · ${order.receiptNo}`}
-      subtitle={`Queue #${String(order.queueNo).padStart(3, '0')} · ${fmtDateTime(order.createdAt)}`}
+      title={`Official Receipt · ${order.or_number}`}
+      subtitle={`Queue #${String(order.order_number).padStart(2, '0')} · ${fmtDateTime(
+        order.created_at
+      )}`}
       onClose={onClose}
     >
       <div className="flex flex-col items-center">
@@ -37,17 +86,22 @@ export function ReceiptModal({
           className="w-full max-w-[330px] rounded-2xl bg-white p-5 font-mono text-[12px] leading-snug text-black shadow-2xl"
         >
           <div className="border-b border-dashed border-black/40 pb-3 text-center">
+            <img
+              src="/el-farm-logo.jpg"
+              alt={snap.store_name || settings.store_name}
+              className="mx-auto mb-1.5 h-11 w-11 rounded-lg object-cover"
+            />
             <p className="text-base font-extrabold uppercase tracking-tight">
-              {settings.storeName}
+              {snap.store_name || settings.store_name}
             </p>
-            <p className="text-[11px]">{settings.address}</p>
-            <p className="text-[10px] text-black/70">{settings.tin}</p>
+            <p className="text-[11px]">{snap.address || settings.address}</p>
+            <p className="text-[10px] text-black/70">VAT REG TIN: {snap.tin || settings.tin}</p>
             <div className="mt-2 inline-block rounded border border-black px-3 py-0.5 text-sm font-extrabold">
-              QUEUE #{String(order.queueNo).padStart(3, '0')}
+              QUEUE #{String(order.order_number).padStart(2, '0')}
             </div>
-            {order.status === 'void' && (
-              <p className="mt-1 rounded bg-black px-2 py-0.5 text-xs font-extrabold text-white">
-                *** VOIDED ({order.voidReason || 'CANCELLED'}) ***
+            {order.status === 'cancelled' && (
+              <p className="mt-1.5 rounded bg-black px-2 py-0.5 text-xs font-extrabold text-white">
+                *** CANCELLED / VOIDED ***
               </p>
             )}
           </div>
@@ -55,112 +109,101 @@ export function ReceiptModal({
           <div className="space-y-0.5 border-b border-dashed border-black/40 py-2.5 text-[11px]">
             <div className="flex justify-between">
               <span>OR No.:</span>
-              <span className="font-bold">{order.receiptNo}</span>
+              <span className="font-bold">{order.or_number}</span>
             </div>
             <div className="flex justify-between">
               <span>Date/Time:</span>
-              <span>{fmtDateTime(order.createdAt)}</span>
+              <span>{fmtDateTime(order.created_at)}</span>
             </div>
             <div className="flex justify-between">
-              <span>Type / Table:</span>
-              <span className="font-bold">
-                {order.orderType} · {order.table}
-              </span>
+              <span>Order Type:</span>
+              <span className="font-bold">{snap.order_type || 'Counter'}</span>
             </div>
             <div className="flex justify-between">
               <span>Customer:</span>
-              <span>{order.customerName || 'Walk-in Guest'}</span>
+              <span>{order.customer_name || 'Walk-in Customer'}</span>
             </div>
             <div className="flex justify-between">
               <span>Cashier:</span>
-              <span>{order.cashier}</span>
+              <span>{order.cashier_name}</span>
             </div>
           </div>
 
           {/* Line Items */}
           <div className="space-y-1.5 border-b border-dashed border-black/40 py-2.5">
-            {order.items.map((ln) => {
-              const addonSum = ln.addons.reduce((s, a) => s + a.price, 0);
-              const lineTotal = (ln.price + addonSum) * ln.qty;
-              return (
-                <div key={ln.id}>
-                  <div className="flex justify-between font-bold">
-                    <span>
-                      {ln.qty}x {ln.title}
-                    </span>
-                    <span>{peso(lineTotal)}</span>
-                  </div>
-                  {ln.addons.length > 0 && (
-                    <p className="pl-3 text-[10px] text-black/75">
-                      + {ln.addons.map((a) => `${a.name} (₱${a.price})`).join(', ')}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
+            {items.map((ln) => (
+              <div key={ln.key} className="flex justify-between font-bold">
+                <span>
+                  {ln.quantity}x {ln.product_name}
+                </span>
+                <span>{peso(ln.unit_price * ln.quantity)}</span>
+              </div>
+            ))}
           </div>
 
           {/* Totals & BIR VAT Breakdown */}
           <div className="space-y-0.5 border-b border-dashed border-black/40 py-2.5 text-[11px]">
             <div className="flex justify-between">
               <span>Subtotal:</span>
-              <span>{peso(order.subTotal)}</span>
+              <span>{peso(subTotal)}</span>
             </div>
-            {order.lessVat > 0 && (
+            {lessVat > 0 && (
               <div className="flex justify-between">
                 <span>Less 12% VAT (SC/PWD):</span>
-                <span>-{peso(order.lessVat)}</span>
+                <span>-{peso(lessVat)}</span>
               </div>
             )}
-            {order.discount > 0 && (
+            {Number(order.discount_amount) > 0 && (
               <div className="flex justify-between">
-                <span>Discount ({order.discountCode || 'PROMO'}):</span>
-                <span>-{peso(order.discount)}</span>
+                <span>
+                  Discount ({order.discount_type === 'senior_pwd' ? 'SC/PWD 20%' : 'PROMO'}):
+                </span>
+                <span>-{peso(Number(order.discount_amount))}</span>
               </div>
             )}
             <div className="flex justify-between pt-1 text-sm font-extrabold">
               <span>TOTAL DUE:</span>
-              <span>{peso(order.total)}</span>
+              <span>{peso(Number(order.total_amount))}</span>
             </div>
             <div className="flex justify-between">
               <span>
-                Paid ({order.payment}
-                {order.paymentRef ? ` #${order.paymentRef}` : ''}):
+                Paid ({order.payment_method}
+                {snap.payment_ref ? ` #${snap.payment_ref}` : ''}):
               </span>
-              <span>{peso(order.tendered)}</span>
+              <span>{peso(Number(order.amount_paid))}</span>
             </div>
             <div className="flex justify-between font-bold">
               <span>CHANGE (SUKLI):</span>
-              <span>{peso(order.change)}</span>
+              <span>{peso(Number(order.change_due))}</span>
             </div>
           </div>
 
           <div className="space-y-0.5 border-b border-dashed border-black/40 py-2 text-[10px] text-black/80">
             <div className="flex justify-between">
               <span>VATable Sales:</span>
-              <span>{peso(order.vatableSales)}</span>
+              <span>{peso(Number(order.vatable_sales))}</span>
             </div>
             <div className="flex justify-between">
-              <span>VAT Amount ({settings.vatRate}%):</span>
-              <span>{peso(order.vat)}</span>
+              <span>VAT Amount (12%):</span>
+              <span>{peso(Number(order.vat_amount))}</span>
             </div>
             <div className="flex justify-between">
               <span>VAT-Exempt Sales:</span>
-              <span>{peso(order.vatExempt)}</span>
+              <span>{peso(vatExempt)}</span>
             </div>
           </div>
 
           <div className="flex flex-col items-center pt-3 text-center">
             <div className="rounded bg-white p-1.5">
               <QRCode
-                value={`${settings.storeName}|${order.receiptNo}|${order.total.toFixed(2)}|${new Date(
-                  order.createdAt
-                ).toISOString()}`}
+                value={`${settings.store_name}|${order.or_number}|${Number(
+                  order.total_amount
+                ).toFixed(2)}|${order.created_at}`}
                 size={84}
                 level="M"
               />
             </div>
-            <p className="mt-2 text-[11px] font-bold">{settings.receiptFooter}</p>
+            <p className="mt-2 text-[11px] font-bold">Maraming salamat po! Balik po kayo.</p>
             <p className="mt-0.5 text-[9px] text-black/60">
               THIS SERVES AS YOUR OFFICIAL RECEIPT
             </p>
@@ -169,19 +212,19 @@ export function ReceiptModal({
 
         {/* Action Buttons */}
         <div className="mt-5 grid w-full grid-cols-2 gap-3">
-          <Btn size="lg" variant="primary" icon="print" onClick={printNow}>
-            Print Receipt
+          <Btn size="lg" variant="primary" icon="print" onClick={() => window.print()}>
+            Print 80mm Receipt
           </Btn>
           <Btn
             size="lg"
             variant="success"
-            icon="add_shopping_cart"
+            icon="check"
             onClick={() => {
               onNewOrder?.();
               onClose();
             }}
           >
-            Next Customer
+            Done
           </Btn>
         </div>
       </div>
@@ -192,37 +235,31 @@ export function ReceiptModal({
 export function ZReadingModal({
   dateKey,
   orders,
-  expenses,
   settings,
   printedBy,
   onClose,
 }: {
   dateKey: string;
-  orders: Order[];
-  expenses: Expense[];
-  settings: Settings;
+  orders: OrderRow[];
+  settings: StoreSettings;
   printedBy: string;
   onClose: () => void;
 }) {
-  const paid = orders.filter((o) => o.status === 'paid' && !o.deleted);
-  const voided = orders.filter((o) => o.status === 'void' && !o.deleted);
-  const grossSub = paid.reduce((s, o) => s + o.subTotal, 0);
-  const totalSales = paid.reduce((s, o) => s + o.total, 0);
-  const totalVat = paid.reduce((s, o) => s + o.vat, 0);
-  const vatable = paid.reduce((s, o) => s + o.vatableSales, 0);
-  const vatExempt = paid.reduce((s, o) => s + o.vatExempt, 0);
-  const discounts = paid.reduce((s, o) => s + o.discount + o.lessVat, 0);
-  const expTotal = expenses.filter((e) => !e.deleted).reduce((s, e) => s + e.amount, 0);
-  const netProfit = totalSales - totalVat - expTotal;
+  const paid = orders.filter((o) => o.status !== 'cancelled');
+  const cancelled = orders.filter((o) => o.status === 'cancelled');
+  const totalSales = paid.reduce((s, o) => s + Number(o.total_amount), 0);
+  const totalVat = paid.reduce((s, o) => s + Number(o.vat_amount), 0);
+  const vatable = paid.reduce((s, o) => s + Number(o.vatable_sales), 0);
+  const discounts = paid.reduce((s, o) => s + Number(o.discount_amount), 0);
 
-  const byPay: Record<PaymentMethod, number> = { Cash: 0, GCash: 0, Maya: 0, Card: 0 };
+  const byPay: Record<string, number> = { Cash: 0, GCash: 0, Maya: 0, Card: 0 };
   paid.forEach((o) => {
-    byPay[o.payment] = (byPay[o.payment] || 0) + o.total;
+    byPay[o.payment_method] = (byPay[o.payment_method] || 0) + Number(o.total_amount);
   });
 
   return (
     <Modal
-      title={`Z-Reading Report · ${dateKey}`}
+      title={`Daily Z-Reading · ${dateKey}`}
       subtitle={fmtDayLong(dateKey)}
       onClose={onClose}
     >
@@ -232,9 +269,14 @@ export function ZReadingModal({
           className="w-full max-w-[330px] rounded-2xl bg-white p-5 font-mono text-[12px] leading-snug text-black shadow-2xl"
         >
           <div className="border-b border-dashed border-black/40 pb-2.5 text-center">
-            <p className="text-base font-extrabold uppercase">{settings.storeName}</p>
+            <img
+              src="/el-farm-logo.jpg"
+              alt={settings.store_name}
+              className="mx-auto mb-1.5 h-11 w-11 rounded-lg object-cover"
+            />
+            <p className="text-base font-extrabold uppercase">{settings.store_name}</p>
             <p className="text-[11px]">{settings.address}</p>
-            <p className="text-[10px]">{settings.tin}</p>
+            <p className="text-[10px]">VAT REG TIN: {settings.tin}</p>
             <p className="mt-1.5 rounded bg-black px-2 py-0.5 text-xs font-extrabold text-white">
               DAILY Z-READING REPORT
             </p>
@@ -250,22 +292,18 @@ export function ZReadingModal({
               <span>{printedBy}</span>
             </div>
             <div className="flex justify-between">
-              <span>Paid Orders:</span>
+              <span>Valid Orders:</span>
               <span className="font-bold">{paid.length}</span>
             </div>
             <div className="flex justify-between">
-              <span>Voided Orders:</span>
-              <span>{voided.length}</span>
+              <span>Cancelled Orders:</span>
+              <span>{cancelled.length}</span>
             </div>
           </div>
 
           <div className="space-y-0.5 border-b border-dashed border-black/40 py-2 text-[11px]">
             <div className="flex justify-between">
-              <span>Gross Subtotal:</span>
-              <span>{peso(grossSub)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Less Discounts/SC:</span>
+              <span>Discounts / SC / PWD:</span>
               <span>-{peso(discounts)}</span>
             </div>
             <div className="flex justify-between font-extrabold">
@@ -280,23 +318,15 @@ export function ZReadingModal({
               <span>12% VAT:</span>
               <span>{peso(totalVat)}</span>
             </div>
-            <div className="flex justify-between">
-              <span>VAT-Exempt:</span>
-              <span>{peso(vatExempt)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Day Expenses:</span>
-              <span>-{peso(expTotal)}</span>
-            </div>
             <div className="flex justify-between border-t border-black/20 pt-1 font-extrabold">
-              <span>NET PROFIT:</span>
-              <span>{peso(netProfit)}</span>
+              <span>NET SALES (EX-VAT):</span>
+              <span>{peso(totalSales - totalVat)}</span>
             </div>
           </div>
 
           <div className="space-y-0.5 py-2 text-[11px]">
             <p className="font-bold uppercase">Payment Breakdown</p>
-            {PAYMENT_METHODS.map((pm) => (
+            {PAYMENT_METHODS.map((pm: { id: PaymentMethod }) => (
               <div key={pm.id} className="flex justify-between">
                 <span>{pm.id}:</span>
                 <span>{peso(byPay[pm.id] || 0)}</span>
@@ -307,7 +337,135 @@ export function ZReadingModal({
 
         <div className="mt-5 grid w-full grid-cols-2 gap-3">
           <Btn size="lg" variant="primary" icon="print" onClick={() => window.print()}>
-            Print Z-Reading
+            Print 80mm Z-Reading
+          </Btn>
+          <Btn size="lg" variant="ghost" onClick={onClose}>
+            Close
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+export interface PayslipPrintData {
+  cashierName: string;
+  username: string;
+  cutoffStart: string;
+  cutoffEnd: string;
+  daysWorked: number;
+  regularHours: number;
+  overtimeHours: number;
+  hourlyRate: number;
+  otMultiplier: number;
+  regularPay: number;
+  overtimePay: number;
+  netPayout: number;
+  preparedBy: string;
+}
+
+export function PayslipModal({
+  payslip,
+  settings,
+  onClose,
+}: {
+  payslip: PayslipPrintData;
+  settings: StoreSettings;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      title={`80mm Thermal Payslip · ${payslip.cashierName}`}
+      subtitle={`Cutoff ${payslip.cutoffStart} to ${payslip.cutoffEnd}`}
+      onClose={onClose}
+    >
+      <div className="flex flex-col items-center">
+        <div
+          id="printable-receipt"
+          className="w-full max-w-[330px] rounded-2xl bg-white p-5 font-mono text-[12px] leading-snug text-black shadow-2xl"
+        >
+          {/* Centered Company Name Header as Required */}
+          <div className="border-b border-dashed border-black/40 pb-3 text-center">
+            <img
+              src="/el-farm-logo.jpg"
+              alt={settings.store_name}
+              className="mx-auto mb-1.5 h-11 w-11 rounded-lg object-cover"
+            />
+            <p className="text-base font-extrabold uppercase tracking-tight">
+              {settings.store_name}
+            </p>
+            <p className="text-[11px]">{settings.address}</p>
+            <p className="mt-2 rounded bg-black px-2 py-0.5 text-xs font-extrabold uppercase text-white">
+              CASHIER PAYSLIP (BARMM-05)
+            </p>
+          </div>
+
+          <div className="space-y-1 border-b border-dashed border-black/40 py-2.5 text-[11px]">
+            <div className="flex justify-between">
+              <span>Employee:</span>
+              <span className="font-bold">{payslip.cashierName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Username:</span>
+              <span>@{payslip.username}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Cutoff From:</span>
+              <span className="font-bold">{payslip.cutoffStart}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Cutoff To:</span>
+              <span className="font-bold">{payslip.cutoffEnd}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Days Worked:</span>
+              <span className="font-bold">{payslip.daysWorked} day(s)</span>
+            </div>
+          </div>
+
+          <div className="space-y-1 border-b border-dashed border-black/40 py-2.5 text-[11px]">
+            <div className="flex justify-between">
+              <span>Hourly Rate:</span>
+              <span>{peso(payslip.hourlyRate)}/hr</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Regular Hours:</span>
+              <span>{payslip.regularHours.toFixed(2)} hrs</span>
+            </div>
+            <div className="flex justify-between font-bold">
+              <span>Regular Hours Pay:</span>
+              <span>{peso(payslip.regularPay)}</span>
+            </div>
+            <div className="flex justify-between pt-1">
+              <span>Overtime Hours:</span>
+              <span>{payslip.overtimeHours.toFixed(2)} hrs</span>
+            </div>
+            <div className="flex justify-between font-bold">
+              <span>Overtime Pay ({payslip.otMultiplier}x):</span>
+              <span>{peso(payslip.overtimePay)}</span>
+            </div>
+          </div>
+
+          <div className="border-b border-dashed border-black/40 py-3">
+            <div className="flex items-baseline justify-between text-sm font-extrabold">
+              <span>TOTAL NET PAYOUT:</span>
+              <span className="text-base">{peso(payslip.netPayout)}</span>
+            </div>
+          </div>
+
+          <div className="pt-5 text-center text-[10px]">
+            <div className="mx-auto mt-4 w-48 border-t border-black pt-1 font-bold">
+              {payslip.cashierName}
+            </div>
+            <p className="text-black/70">Employee Signature / Date Received</p>
+            <p className="mt-2 text-black/60">Prepared by: {payslip.preparedBy}</p>
+            <p className="text-black/50">{fmtDateTime(Date.now())}</p>
+          </div>
+        </div>
+
+        <div className="mt-5 grid w-full grid-cols-2 gap-3">
+          <Btn size="lg" variant="primary" icon="print" onClick={() => window.print()}>
+            Print 80mm / QMS Payslip
           </Btn>
           <Btn size="lg" variant="ghost" onClick={onClose}>
             Close

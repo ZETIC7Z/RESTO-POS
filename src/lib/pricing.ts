@@ -1,61 +1,71 @@
-import type { Addon, Discount, OrderLine, Totals } from '../data/posData';
+import type { DiscountType } from '../data/posData';
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
-export const lineUnit = (l: OrderLine) =>
-  l.price + l.addons.reduce((s, a) => s + a.price, 0);
-
-export const lineKey = (menuId: string, addons: Addon[]) =>
-  `${menuId}::${addons.map((a) => a.id).sort().join(',')}`;
+export interface ComputedOrderTotals {
+  subTotal: number;
+  lessVat: number;
+  discountAmount: number;
+  vatableSales: number;
+  vatAmount: number;
+  vatExempt: number;
+  totalAmount: number;
+}
 
 /**
- * Philippine VAT-inclusive pricing.
- * - Regular / promo discounts: discount off the VAT-inclusive subtotal, VAT extracted from the result.
- * - Senior Citizen / PWD (statutory): VAT is removed first (VAT-exempt), then 20% off the VAT-exclusive base.
+ * Philippine BIR VAT-inclusive & RA 9994 (Senior Citizen / PWD) pricing engine.
+ * - 'none': Total = subtotal; 12% VAT extracted from VAT-inclusive price.
+ * - 'senior_pwd': 12% VAT removed first (VAT-exempt base), then 20% statutory discount.
+ * - 'promo': 10% promo discount off VAT-inclusive subtotal; 12% VAT extracted from result.
  */
-export function computeTotals(
-  lines: OrderLine[],
-  discount: Discount | null | undefined,
-  vatRate: number
-): Totals {
-  const subTotal = r2(lines.reduce((s, l) => s + lineUnit(l) * l.qty, 0));
+export function computeOrderTotals(
+  lines: { unit_price: number; quantity: number }[],
+  discountType: DiscountType,
+  vatRate = 12
+): ComputedOrderTotals {
+  const subTotal = r2(
+    lines.reduce((s, l) => s + Number(l.unit_price) * Number(l.quantity), 0)
+  );
   const div = 1 + vatRate / 100;
-  const active =
-    discount && subTotal > 0 && subTotal >= discount.minOrder ? discount : null;
 
-  if (active?.statutory) {
-    const base = r2(subTotal / div);
-    const lessVat = r2(subTotal - base);
-    const disc = r2((base * (active.percent ?? 20)) / 100);
+  if (subTotal <= 0) {
     return {
-      subTotal,
-      lessVat,
-      discount: disc,
+      subTotal: 0,
+      lessVat: 0,
+      discountAmount: 0,
       vatableSales: 0,
-      vat: 0,
-      vatExempt: base,
-      total: r2(base - disc),
+      vatAmount: 0,
+      vatExempt: 0,
+      totalAmount: 0,
     };
   }
 
-  let disc = 0;
-  if (active) {
-    disc = active.percent
-      ? r2((subTotal * active.percent) / 100)
-      : Math.min(subTotal, active.fixed ?? 0);
+  if (discountType === 'senior_pwd') {
+    const base = r2(subTotal / div);
+    const lessVat = r2(subTotal - base);
+    const discountAmount = r2(base * 0.2);
+    return {
+      subTotal,
+      lessVat,
+      discountAmount,
+      vatableSales: 0,
+      vatAmount: 0,
+      vatExempt: base,
+      totalAmount: r2(base - discountAmount),
+    };
   }
-  const total = r2(subTotal - disc);
-  const vatable = r2(total / div);
+
+  const discountAmount = discountType === 'promo' ? r2(subTotal * 0.1) : 0;
+  const totalAmount = r2(subTotal - discountAmount);
+  const vatableSales = r2(totalAmount / div);
+
   return {
     subTotal,
     lessVat: 0,
-    discount: disc,
-    vatableSales: vatable,
-    vat: r2(total - vatable),
+    discountAmount,
+    vatableSales,
+    vatAmount: r2(totalAmount - vatableSales),
     vatExempt: 0,
-    total,
+    totalAmount,
   };
 }
-
-export const calcTotals = computeTotals;
-

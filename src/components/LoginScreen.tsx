@@ -1,74 +1,39 @@
 import React, { useState } from 'react';
-import { Account, Role, Session, Settings } from '../data/posData';
-import { Btn, cx, Icon, requestFullscreen, useFullscreen } from './ui';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Role } from '../data/posData';
+import { useAuth } from '../lib/AuthContext';
+import { QrModal } from './QrModal';
+import { BrandLogo, Btn, cx, DeveloperFooter, Icon, requestFullscreen, useFullscreen } from './ui';
 
-export function LoginScreen({
-  settings,
-  lanUrl,
-  onLogin,
-  onOpenQr,
-}: {
-  settings: Settings;
-  lanUrl: string;
-  onLogin: (session: Session) => void;
-  onOpenQr: () => void;
-}) {
-  const [username, setUsername] = useState('');
+export function LoginScreen() {
+  const { profile, storeSettings, loading, signIn } = useAuth();
+  const navigate = useNavigate();
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<Role>('cashier');
   const [showPass, setShowPass] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState('');
+  const [showQr, setShowQr] = useState(false);
   const { isFs, toggle: toggleFs } = useFullscreen();
 
-  const submit = (e: React.FormEvent) => {
+  if (!loading && profile) {
+    return <Navigate to={profile.role === 'admin' ? '/admin' : '/cashier'} replace />;
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const u = username.trim().toLowerCase();
-    const p = password;
-
-    // Match against configured accounts (plus guaranteed built-in admin/admin and user/user fallback)
-    const accounts: Account[] =
-      settings.accounts?.length > 0
-        ? settings.accounts
-        : [
-            { username: 'admin', password: 'admin', role: 'admin', name: 'Administrator' },
-            { username: 'user', password: 'user', role: 'cashier', name: 'Cashier' },
-          ];
-
-    const match = accounts.find(
-      (a) => a.username.toLowerCase() === u && a.password === p && a.role === role
-    );
-    const anyRoleMatch = accounts.find(
-      (a) => a.username.toLowerCase() === u && a.password === p
-    );
-
-    if (!match) {
-      if (anyRoleMatch) {
-        setErr(
-          `Account "${anyRoleMatch.username}" belongs to the ${anyRoleMatch.role.toUpperCase()} role. Please select ${
-            anyRoleMatch.role === 'admin' ? 'Admin' : 'Cashier'
-          } below.`
-        );
-      } else {
-        setErr('Invalid username or password. Use admin / admin or user / user.');
-      }
-      return;
+    setErr('');
+    setSubmitting(true);
+    try {
+      const signedProfile = await signIn(identifier, password, role);
+      requestFullscreen();
+      navigate(signedProfile.role === 'admin' ? '/admin' : '/cashier', { replace: true });
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : 'Unable to sign in.');
+    } finally {
+      setSubmitting(false);
     }
-
-    setErr('');
-    requestFullscreen();
-    onLogin({
-      username: match.username,
-      role: match.role,
-      name: match.name,
-      loginAt: Date.now(),
-    });
-  };
-
-  const quickFill = (u: string, p: string, r: Role) => {
-    setUsername(u);
-    setPassword(p);
-    setRole(r);
-    setErr('');
   };
 
   return (
@@ -79,32 +44,37 @@ export function LoginScreen({
         <div className="absolute -bottom-28 -right-20 h-96 w-96 rounded-full bg-emerald-500/15 blur-[130px]" />
       </div>
 
-      {/* Top Bar: Brand + Tablet QR + Fullscreen */}
+      {/* Top Bar: Brand + Public Queue Link + Tablet QR + Fullscreen */}
       <header className="relative z-10 mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#ff9a4d] to-[#ff5a1f] shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_12px_28px_-8px_rgba(255,96,32,0.85)]">
-            <Icon name="restaurant" className="text-[26px] text-white" />
-          </div>
+          <BrandLogo size="md" alt={storeSettings.store_name} />
           <div>
             <p className="text-base font-extrabold tracking-tight text-white">
-              {settings.storeName}
+              {storeSettings.store_name}
             </p>
             <p className="flex items-center gap-1 text-xs text-white/55">
               <Icon name="location_on" className="text-[14px] text-orange-400" />
-              {settings.address}
+              {storeSettings.address}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            to="/display"
+            className="inline-flex h-12 items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-500/15 px-4 text-sm font-bold text-emerald-200 transition hover:bg-emerald-500/25"
+          >
+            <Icon name="tv" className="text-[20px]" />
+            Queue TV Display
+          </Link>
           <Btn
             size="md"
             variant="soft"
             icon="qr_code_2"
-            onClick={onOpenQr}
-            title="Show QR code to open POS on tablet or mobile"
+            onClick={() => setShowQr(true)}
+            title="Show QR code to open POS on tablet, kitchen screen, or Smart TV"
           >
-            Tablet QR Connect
+            Device QR Connect
           </Btn>
           <Btn
             size="md"
@@ -122,30 +92,28 @@ export function LoginScreen({
       <main className="relative z-10 my-6 flex flex-1 items-center justify-center">
         <div className="glass w-full max-w-md rounded-[32px] p-6 sm:p-9">
           <div className="mb-6 flex items-center gap-3.5">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-b from-[#ff9a4d] to-[#ff5a1f] shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_14px_30px_-10px_rgba(255,96,32,0.9)]">
-              <Icon name="point_of_sale" className="text-[30px] text-white" />
-            </div>
+            <BrandLogo size="lg" alt={storeSettings.store_name} />
             <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-400/30 bg-orange-500/15 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-orange-300">
-                Smart Fast-Food POS
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-emerald-300">
+                Cloud Supabase POS
               </span>
               <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-white">
-                {settings.storeName}
+                {storeSettings.store_name}
               </h1>
               <p className="text-xs text-white/55">
-                {settings.address} · Sign in to start
+                {storeSettings.address} · Staff Sign-In
               </p>
             </div>
           </div>
 
-          <form onSubmit={submit} className="space-y-4">
-            {/* USERNAME */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* USERNAME OR EMAIL */}
             <div>
               <label
-                htmlFor="login-username"
+                htmlFor="login-identifier"
                 className="mb-1.5 block text-xs font-extrabold uppercase tracking-[0.14em] text-white/60"
               >
-                Username
+                Username or Email
               </label>
               <div className="relative">
                 <Icon
@@ -153,15 +121,15 @@ export function LoginScreen({
                   className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[20px] text-white/40"
                 />
                 <input
-                  id="login-username"
+                  id="login-identifier"
                   type="text"
                   autoComplete="username"
-                  value={username}
+                  value={identifier}
                   onChange={(e) => {
-                    setUsername(e.target.value);
+                    setIdentifier(e.target.value);
                     setErr('');
                   }}
-                  placeholder="Enter username (admin or user)"
+                  placeholder="Enter username or email"
                   className="input h-14 !pl-12 text-base font-semibold"
                   required
                 />
@@ -205,7 +173,7 @@ export function LoginScreen({
               </div>
             </div>
 
-            {/* ROLE SELECTOR (Large Touch Cards) */}
+            {/* ROLE SELECTOR */}
             <div>
               <span className="mb-1.5 block text-xs font-extrabold uppercase tracking-[0.14em] text-white/60">
                 Role
@@ -236,7 +204,7 @@ export function LoginScreen({
                   </span>
                   <div>
                     <p className="text-sm font-extrabold leading-tight">Cashier</p>
-                    <p className="text-[11px] text-white/50">Orders & Receipt</p>
+                    <p className="text-[11px] text-white/50">Time-In &amp; POS</p>
                   </div>
                 </button>
 
@@ -265,7 +233,7 @@ export function LoginScreen({
                   </span>
                   <div>
                     <p className="text-sm font-extrabold leading-tight">Admin</p>
-                    <p className="text-[11px] text-white/50">Sales & Full Control</p>
+                    <p className="text-[11px] text-white/50">Sales &amp; Payroll</p>
                   </div>
                 </button>
               </div>
@@ -283,66 +251,33 @@ export function LoginScreen({
               variant="success"
               size="xl"
               icon="login"
+              disabled={submitting}
               className="w-full"
             >
-              Sign in ({role === 'admin' ? 'Admin Full Access' : 'Cashier Terminal'})
+              {submitting
+                ? 'Signing In...'
+                : role === 'cashier'
+                ? 'Sign In & Clock In Shift'
+                : 'Sign In as Admin'}
             </Btn>
           </form>
 
-          {/* 1-Tap Quick Fill Credentials Helper for Tablet / Demo */}
-          <div className="mt-6 border-t border-white/10 pt-5">
-            <p className="mb-2.5 text-center text-[11px] font-bold uppercase tracking-[0.14em] text-white/45">
-              One-Tap Quick Fill Credentials
-            </p>
-            <div className="grid grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                onClick={() => quickFill('user', 'user', 'cashier')}
-                className="glass-card flex h-14 items-center justify-between rounded-2xl px-3.5 text-left transition hover:border-orange-400/40 active:scale-[0.98]"
-              >
-                <div>
-                  <p className="text-xs font-extrabold text-orange-300">Cashier Login</p>
-                  <p className="font-mono text-xs text-white/75">user / user</p>
-                </div>
-                <Icon name="touch_app" className="text-[20px] text-orange-300" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => quickFill('admin', 'admin', 'admin')}
-                className="glass-card flex h-14 items-center justify-between rounded-2xl px-3.5 text-left transition hover:border-emerald-400/40 active:scale-[0.98]"
-              >
-                <div>
-                  <p className="text-xs font-extrabold text-emerald-300">Admin Login</p>
-                  <p className="font-mono text-xs text-white/75">admin / admin</p>
-                </div>
-                <Icon name="admin_panel_settings" className="text-[20px] text-emerald-300" />
-              </button>
-            </div>
-            <p className="mt-3 text-center text-[11px] text-white/40">
-              LAN URL: <span className="font-mono text-white/70">{lanUrl}</span>
-            </p>
+          <div className="mt-5 border-t border-white/10 pt-4 text-center text-xs text-white/50">
+            {role === 'cashier'
+              ? 'Cashier login automatically records your Time-In shift in attendance logs.'
+              : 'Admin manages Sales Calendar, Menu Stock, Employees & BARMM-05 Payroll.'}
           </div>
         </div>
       </main>
 
-      {/* Developer Attribution Footer */}
-      <footer className="relative z-10 mx-auto flex flex-col items-center justify-center gap-1.5 pt-2 text-center text-xs text-white/50">
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <img src="/zeticuz-logo.svg" alt="ZETICUZ" className="h-4 w-4 opacity-85" />
-          <span className="font-semibold tracking-wide text-white/70">
-            SITE DEVELOPED BY: Sam Pangilinan · © 2026
-          </span>
-          <a
-            href="https://www.zeticuz.xyz/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-0.5 text-[11px] font-bold text-orange-300 transition hover:border-orange-400/40 hover:bg-orange-500/15"
-          >
-            Explore Developer Portfolio & Projects ↗
-          </a>
-        </div>
-      </footer>
+      <DeveloperFooter className="relative z-10" />
+
+      {showQr && (
+        <QrModal
+          storeName={storeSettings.store_name}
+          onClose={() => setShowQr(false)}
+        />
+      )}
     </div>
   );
 }

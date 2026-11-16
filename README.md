@@ -1,129 +1,247 @@
-# RESTO-POS · Ligaya Kusina Express
+# RESTO-POS · EL Farm Cafe Cloud POS
 
-> **Advanced Fast-Food & Restaurant Point of Sale (POS) System with Multi-Device Wi-Fi LAN Sync, Scannable QR Connect, Interactive Sales Calendar, and Official Receipt Printing.**  
-> Built for **Ligaya Kusina Express** — *Lamitan City, Basilan, Philippines*.
-
----
-
-## 🌟 Key Features
-
-### 1. 📱 Instant Tablet & Mobile QR Connect
-- **Zero-Typing Device Pairing**: Cashiers and servers do not need to type LAN IP addresses into mobile or tablet browsers.
-- Clicking **"View QR"** or **"Tablet QR Connect"** opens a high-contrast modal with a live scannable QR code (`react-qr-code`) encoding the active restaurant Wi-Fi address (e.g. `http://192.168.254.105:5173/`).
-- Point any iPad, Android tablet, or smartphone camera at the screen to launch the POS register instantly.
-
-### 2. 🖥️ Full-Screen Touch-First Interface
-- **Hand-Friendly Touch Targets**: Every button, quantity stepper (`−` / `+`), payment chip, and category pill is sized between **48px and 64px** height for fast, tactile one-hand operation on touchscreen terminals and tablets.
-- **Hidden Browser URL Bar**: Includes automatic `requestFullscreen({ navigationUI: 'hide' })` upon signing in, a top header **Full Screen** toggle button, and a progressive web app manifest (`manifest.webmanifest`) with `"display": "fullscreen"`.
-
-### 3. 🔐 Role-Based Access Control (Cashier vs. Admin)
-- **Fast-Food Login Screen**: Modeled after modern quick-service POS terminals with one-tap credential quick-fill cards for instant terminal testing.
-- **Admin (`admin` / `admin`)**:
-  - Full access to POS Register, Tables & Tabs, Kitchen Display (KDS), **Sales Calendar & Income Analytics**, **Menu & Stock CRUD Manager**, and **Store & Staff Settings**.
-  - Authorized to edit payment methods, customer names, or void transactions.
-- **Cashier (`user` / `user`)**:
-  - Dedicated register terminal access: punches customer orders, selects add-ons, manages dining room tables, sends tickets to the kitchen, and prints official receipts.
-  - Financial income reports, menu price editing, and store settings are securely hidden.
-
-### 4. 📅 Interactive Monthly Sales Calendar & Day Ledger
-- **Visual Month-at-a-Glance**: Navigate across months with live daily order count badges (e.g. `31 ord`) and daily gross revenue pills (e.g. `₱14.1k`).
-- **Deep Single-Day Breakdown**: Tap any previous or current day on the calendar to inspect:
-  - **Total Orders in Day** (with paid vs. void count)
-  - **Gross Sales (`₱ PHP`)** and average ticket size
-  - **Net Sales (ex-VAT)** and **12% VAT Collected**
-  - **Discounts Given** (Senior Citizen / PWD & promo vouchers)
-  - **Day Expenses** and **Net Profit**
-- **Hourly Sales Activity Chart**: Visual bar graph of order volumes throughout the day (7 AM – 9 PM Manila Time).
-- **Payment Channel Breakdown**: Instant revenue totals across **Cash**, **GCash**, **Maya**, and **Card**.
-- **Day Expense Logger**: Add ingredients, utilities, packaging, or salary payouts on specific days to compute true net profit.
-- **Itemized Timestamped Order Ledger**: Every single order displays its exact Manila date & time, cashier name, customer name, order type, items ordered, and total.
-- **CSV Data Export**: One-tap export to structured `.csv` format (`ligaya-kusina-sales-YYYY-MM-DD.csv`).
-- **End-of-Day Z-Reading Report**: Thermal printable summary for daily cashier closing and BIR compliance.
-
-### 5. 🧾 80mm Thermal Official Receipt Printing
-- Formatted specifically for standard **80mm thermal ESC/POS receipt printers** (`@media print` clean layout).
-- Contains store branding, address (*Lamitan City, Basilan, Philippines*), BIR TIN header, Official Receipt number (`OR-xxxxxx`), Queue number (`#001`), Manila timestamp, cashier name, itemized lines with extras, statutory Senior Citizen/PWD VAT-exempt breakdown, cash tendered, change (*sukli*), and verification QR code.
-
-### 6. 🇵🇭 Philippine Pricing & Statutory Compliance
-- **Currency**: Philippine Peso (`₱ PHP`), formatted via `Intl.NumberFormat('en-PH')`.
-- **Timezone**: `Asia/Manila` (`UTC+8`) for all order timestamps, Z-readings, and calendar buckets.
-- **12% VAT-Inclusive Engine**: Handles standard VATable transactions and Philippine **RA 9994** statutory discounts (VAT-exempt base with 20% discount for Senior Citizens and PWDs).
-
-### 7. 🍽️ Dining Tables & Open Tabs Floor Map
-- Manage dining tables with real-time visual status: **Available (Free)** vs. **Occupied (Active Tab)**.
-- Hold open tabs for dine-in guests, add additional dishes as they order, and load tabs into the register for final settlement.
-
-### 8. 👨‍🍳 Kitchen Display System (KDS)
-- Real-time ticket pipeline for kitchen and line cooks.
-- 1-tap ticket progression: **`New` ➔ `Cooking` ➔ `Ready` ➔ `Served`**.
-
-### 9. 🍲 Philippine Fast-Food Menu & Stock Inventory
-- Pre-populated with **33 Philippine & fast-food dishes** across 6 categories:
-  - 🍚 **Silog & Rice**: *Beef Tapsilog, Chicken Inasal Meal, Sizzling Pork Sisig, Lechon Kawali, Kare-Kare, Pork Tocilog*
-  - 🍗 **Chicken**: *1-pc & 2-pc Fried Chicken Meals, 6-pc Barkada Bucket, Lumpiang Shanghai, Sinigang Bowl*
-  - 🍔 **Burgers**: *Classic Burger, Double Burger Overload, Cheese Burger Deluxe, Black Bun Burger, BBQ Brisket Burger*
-  - 🍜 **Noodles (Pancit)**: *Pinoy Spaghetti, Pancit Palabok, Pancit Canton, Special Lomi*
-  - 🥤 **Drinks**: *Sago't Gulaman, Calamansi Iced Tea, Buko Pandan Shake, Iced Kapeng Barako, Softdrinks*
-  - 🍨 **Desserts**: *Halo-Halo Espesyal, Leche Flan, Turon w/ Langka, Mango Pie*
-- Full menu CRUD: edit prices, restock quantities (+20 button), toggle availability, or add custom dishes with photo presets.
-
-### 10. 🌐 Local Wi-Fi LAN Sync (No Cloud Dependency Required)
-- Built-in local REST API plugin in Vite (`server/posApi.ts`) that persists state atomically to `data/ligaya-db.json`.
-- Automatically detects the host PC's Wi-Fi IPv4 address.
-- 3-second background polling with optimistic offline queuing: if the restaurant Wi-Fi drops, cashiers can continue taking orders offline; changes automatically flush and sync when reconnected.
+> **Full-Cloud Restaurant & Cafe Point of Sale, Live Smart TV Queue Display, Kitchen Display System (KDS), Employee Attendance Calendar, and Lamitan City (BARMM-05) Payroll System.**  
+> Powered by **Supabase** (PostgreSQL, Auth, Storage, Realtime) & **Vercel SPA** for **EL Farm Cafe** — *Lamitan City, Basilan, Philippines*.
 
 ---
 
-## 🔑 Default Login Credentials
+## 🔄 What Was Upgraded in Cloud v2.0
 
-| Role | Username | Password | Access Level |
-| :--- | :--- | :--- | :--- |
-| **Admin** | `admin` | `admin` | **Full Control** (Register, Tables, Kitchen, Sales Calendar, Menu, Settings, Void Sales) |
-| **Cashier** | `user` | `user` | **Register Terminal** (Register, Tables, Kitchen Queue, Receipt Printing) |
+Previously a single-device local file POS, **RESTO-POS** is now a **100% cloud-synced multi-terminal platform** with zero hardcoded demo seed data or local JSON storage:
+
+- **100% Live Cloud Persistence**: Removed local Express/Vite JSON file storage and hardcoded demo seed items — all products, images, orders, customers, shift logs, and store rates read and write directly to Supabase PostgreSQL + Storage.
+- **Role-Routed Multi-Device Screens (`react-router-dom` v6)**: Dedicated terminals for Cashiers (`/cashier`), Kitchen Crew (`/crew`), Smart TV Queue Monitor (`/display`), and Admin Management (`/admin`), all guarded by `ProtectedRoute` and Supabase Row Level Security (RLS).
+- **Dynamic Menu Image Upload & Storage**: Adding or editing dishes in `/admin` uploads photos directly from your device to the public `menu-images` Storage bucket and saves the dish + URL directly into `public.products` (deleting a dish also removes its Storage image).
+- **Live Submitted-Order Editor & Voiding**: Cashiers and Admins can adjust quantities/items on already-submitted orders (`update_submitted_order` RPC) or void orders (`cancel_order` RPC) with automatic inventory stock reconciliation.
+- **Automatic Cashier Attendance & Payroll**: Every Cashier sign-in automatically stamps Time-In in `attendance_logs`, and clicking **Log Out / End Shift** stamps Time-Out. Feeds directly into per-employee monthly calendars, an Absence tracker, a Year-End Christmas Bonus Leaderboard, and a Lamitan City **BARMM-05** (`₱54.50/hr` / Dec 1, 2026 `₱57.63/hr` · `1.25x` OT) 80mm thermal Payslip printer.
+
+---
+
+## 🌟 System Features by Terminal
+
+### 1. 🔐 Unified Staff Login & Auto Shift Clock (`/login`)
+- Modern 3D frosted-glass fast-food login screen with **Cashier** and **Admin** role selection cards.
+- Supports signing in via **Username or Email** via Supabase Auth (`signInWithPassword`).
+- **Automatic Shift Tracking**: Cashier login inserts an open shift in `attendance_logs` (`shift_date` in `Asia/Manila`, `login_time = now()`); logging out stamps `logout_time = now()`.
+- Includes **Device QR Connect** (`react-qr-code`) for instant tablet/TV pairing and one-tap **Full Screen** mode.
+
+### 2. 📱 Cashier POS Terminal (`/cashier`)
+- Touch-friendly (`48px–64px` targets) menu grid showing live Supabase `products`, uploaded photos, Peso prices (`₱ PHP`), and `stock_qty` badges (out-of-stock dishes automatically disabled).
+- **Customer CRM Modal**: Search existing loyal guests or quick-add new customers (`public.customers`).
+- **Philippine Tax & Discounts**: Supports regular **12% VAT-inclusive** calculation and **Senior Citizen / PWD (RA 9994)** VAT-exempt + 20% statutory discounts.
+- **Checkout & 80mm Thermal Receipt**: Calls `process_checkout` PostgreSQL RPC to issue a daily resetting Queue `#` (`#01`, `#02`, …) and monotonic Official Receipt (`OR-xxxxxx`), deduct stock atomically, and trigger `window.print()` for 80mm ESC/POS thermal receipt printers.
+- **Today's Orders Drawer**: Reprint receipts, edit submitted items (`update_submitted_order` RPC), or cancel/void (`cancel_order` RPC).
+
+### 3. 👨‍🍳 Kitchen Display System (`/crew`)
+- Live Realtime queue for kitchen staff showing today's `preparing` and `ready` orders.
+- Large 1-tap progression buttons: **`Mark Ready (Call Queue)`** → **`Complete (Claimed)`**.
+
+### 4. 📺 Smart TV / Android TV Customer Queue Screen (`/display`)
+- Zero-clutter, full-screen split monitor: **PREPARING** on the left and high-contrast emerald **NOW SERVING** on the right.
+- Updates live via Supabase Realtime whenever kitchen staff press **Mark Ready**, plays a two-tone Web Audio API chime alert, and keeps the display awake via `navigator.wakeLock`.
+
+### 5. 📊 Admin Management Dashboard (`/admin`)
+- **Live Today Overview Banner**: Shows the active Cashier on duty today (with clock-in time), Today's Cashier Sales (`₱`), Clients/Orders Served, and Food Items Served.
+- **Sales Calendar & Order Ledger**: Interactive monthly calendar showing daily order counts and revenue totals; click any date to view hourly activity, payment channels (`Cash`, `GCash`, `Maya`, `Card`), Z-Reading thermal printout, CSV export, or Edit/Cancel/Delete orders.
+- **Cloud Menu & Stock Manager**: Full CRUD on `public.products` with `<input type="file" accept="image/*" />` upload to Supabase Storage `menu-images`, quick `+20` restock button, and availability toggles.
+- **Employees & Attendance Calendar**: Create Cashier logins using a secondary non-persisted Supabase client (`persistSession: false`) so the Admin stays logged in, toggle active/inactive status, view individual monthly attendance calendars with automatic **ABSENT** indicators, and rank cashiers on the **Year-End Christmas Bonus Leaderboard**.
+- **Cashier Payroll & 80mm Payslip Printer (BARMM-05)**: Semi-monthly cutoffs (`1st–15th` or `16th–End of Month` with automatic 28/29/30/31-day detection), manual Overtime Hours entry by exact date (`1.25x`), and 80mm Thermal / QMS Payslip printing centered under **EL Farm Cafe**.
+- **Store Settings**: Edit store name, address, BIR TIN, default hourly rate (with 1-click **Wage Order BARMM-05** presets: `₱54.50/hr` now and `₱57.63/hr` Dec 1, 2026), and overtime multiplier.
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: [React 19](https://react.dev/), [TypeScript](https://www.typescriptlang.org/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/), Glassmorphism 3D utilities, [Material Icons Round](https://fonts.google.com/icons)
-- **Tooling & Bundler**: [Vite 6](https://vitejs.dev/) with Node.js local LAN persistence plugin
-- **QR Code Engine**: [react-qr-code](https://github.com/rosskhanas/react-qr-code)
-- **Formatting**: Native `Intl.NumberFormat` (Philippine Peso `₱`) and `Intl.DateTimeFormat` (`Asia/Manila`)
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend UI** | React 19, TypeScript 5.7, Tailwind CSS 3.4, Material Icons Round |
+| **Routing & QR** | React Router DOM v6 (`BrowserRouter`), `react-qr-code` |
+| **Cloud Backend** | Supabase (`@supabase/supabase-js`) — PostgreSQL, Auth, Row Level Security (RLS), Storage (`menu-images`), Realtime |
+| **Localization & Tax** | `Asia/Manila` timezone, `en-PH` Philippine Peso (`₱`), 12% VAT & RA 9994 Senior/PWD engine, BARMM-05 payroll rules |
+| **Build & Hosting** | Vite 6, Vercel (`vercel.json` SPA rewrites) |
 
 ---
 
-## 🚀 Getting Started
+## 🗄️ Step-by-Step Supabase Setup Guide
 
-### Prerequisites
-- [Node.js](https://nodejs.org/) (v18 or higher recommended)
-- [npm](https://www.npmjs.com/)
+Follow these steps to set up your own clean Supabase backend from scratch.
 
-### Installation & Run
+### Step 1: Create a Supabase Project & Storage Bucket
+1. Sign in to [Supabase Dashboard](https://supabase.com/dashboard) and click **New Project**.
+2. Once provisioned, go to **Storage → New bucket**:
+   - Name: `menu-images`
+   - Toggle **Public bucket** → **ON**
+   - Save.
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/ZETIC7Z/RESTO-POS.git
-   cd RESTO-POS
+### Step 2: Run the SQL Setup Script in Supabase SQL Editor
+Open **SQL Editor → New Query** in your Supabase Dashboard, paste the full contents of [`supabase/schema.sql`](supabase/schema.sql) (also shown below), and click **Run**.
+
+<details>
+<summary><strong>Click to expand complete SQL setup script (Tables, RLS, Storage, Realtime & RPCs)</strong></summary>
+
+```sql
+-- 1. Extensions
+create extension if not exists "uuid-ossp" with schema extensions;
+create extension if not exists pgcrypto with schema extensions;
+
+-- 2. Core Tables
+create table if not exists public.profiles (
+  id uuid primary key references auth.users (id) on delete cascade,
+  email text,
+  username text unique not null,
+  full_name text not null,
+  role text not null default 'cashier' check (role in ('admin', 'cashier')),
+  hourly_rate numeric default 54.50,
+  is_active boolean default true,
+  created_at timestamptz default now()
+);
+
+create table if not exists public.attendance_logs (
+  id uuid primary key default extensions.uuid_generate_v4(),
+  cashier_id uuid not null references public.profiles (id) on delete cascade,
+  shift_date date not null default ((now() at time zone 'Asia/Manila')::date),
+  login_time timestamptz not null default now(),
+  logout_time timestamptz,
+  overtime_hours numeric default 0,
+  notes text,
+  created_at timestamptz default now()
+);
+
+create table if not exists public.products (
+  id uuid primary key default extensions.uuid_generate_v4(),
+  name text not null,
+  category text not null,
+  price numeric not null,
+  stock_qty integer not null default 0,
+  image_url text,
+  is_available boolean default true,
+  created_at timestamptz default now()
+);
+
+create table if not exists public.customers (
+  id uuid primary key default extensions.uuid_generate_v4(),
+  name text not null,
+  phone text unique,
+  total_spent numeric default 0,
+  visit_count integer default 0,
+  created_at timestamptz default now()
+);
+
+create table if not exists public.orders (
+  id uuid primary key default extensions.uuid_generate_v4(),
+  order_number integer not null,
+  or_number text not null,
+  cashier_id uuid references public.profiles (id) on delete set null,
+  cashier_name text not null,
+  customer_id uuid references public.customers (id) on delete set null,
+  customer_name text default 'Walk-in Customer',
+  payment_method text default 'Cash',
+  discount_type text default 'none' check (discount_type in ('none', 'senior_pwd', 'promo')),
+  vatable_sales numeric default 0,
+  vat_amount numeric default 0,
+  discount_amount numeric default 0,
+  total_amount numeric not null,
+  amount_paid numeric not null,
+  change_due numeric not null,
+  status text not null default 'preparing' check (status in ('preparing', 'ready', 'completed', 'cancelled')),
+  receipt_snapshot jsonb not null,
+  order_date date default ((now() at time zone 'Asia/Manila')::date),
+  created_at timestamptz default now()
+);
+
+create table if not exists public.order_items (
+  id uuid primary key default extensions.uuid_generate_v4(),
+  order_id uuid references public.orders (id) on delete cascade,
+  product_id uuid references public.products (id) on delete set null,
+  product_name text not null,
+  quantity integer not null,
+  unit_price numeric not null
+);
+
+create table if not exists public.store_settings (
+  id integer primary key default 1,
+  store_name text default 'EL Farm Cafe',
+  address text default 'Lamitan City, Basilan, Philippines',
+  tin text default '000-000-000-000',
+  default_hourly_rate numeric default 54.50,
+  ot_multiplier numeric default 1.25
+);
+
+insert into public.store_settings (id, store_name, address, tin, default_hourly_rate, ot_multiplier)
+values (1, 'EL Farm Cafe', 'Lamitan City, Basilan, Philippines', '000-000-000-000', 54.50, 1.25)
+on conflict (id) do nothing;
+```
+
+> See [`supabase/schema.sql`](supabase/schema.sql) for the complete script including all RLS policies, Storage `menu-images` policies, Realtime publication setup, and PostgreSQL RPC functions (`is_admin`, `resolve_login_profile`, `admin_upsert_cashier_profile`, `admin_create_cashier_account`, `process_checkout`, `update_submitted_order`, and `cancel_order`).
+
+</details>
+
+---
+
+### Step 3: How to Manually Create Your First Admin Account in Supabase
+Because sign-up requires admin verification and databases start completely empty:
+
+1. In Supabase Dashboard, go to **Authentication → Users**.
+2. Click **Add user → Create new user**:
+   - **Email**: e.g. `admin@yourcafe.com`
+   - **Password**: choose a strong password
+   - Check **Auto Confirm User** (`ON`) and click **Create user**.
+3. Copy the generated **User UID** (`uuid`) from the Users table.
+4. Go to **SQL Editor → New Query** and run:
+   ```sql
+   INSERT INTO public.profiles (id, email, username, full_name, role, hourly_rate, is_active)
+   VALUES (
+     'PASTE-YOUR-USER-UUID-HERE',
+     'admin@yourcafe.com',
+     'admin',
+     'Store Owner',
+     'admin',
+     54.50,
+     true
+   );
    ```
+5. You can now sign in at `/login` under the **Admin** card using either `admin` or `admin@yourcafe.com`, and create Cashier accounts directly from the **Employees** tab inside `/admin`!
 
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+---
 
-3. **Start the local POS server with LAN access**:
-   ```bash
-   npm run dev
-   ```
+### Step 4: Configure Environment Variables (`.env`)
+Copy `.env.example` to `.env` in the project root and paste your own API credentials from **Supabase Dashboard → Project Settings → API**:
 
-4. **Access the POS**:
-   - **On the host PC**: Open [http://localhost:5173/](http://localhost:5173/)
-   - **On tablets or smartphones**: Connect to the same restaurant Wi-Fi, open the host PC screen, click **"View QR"**, and scan the QR code with your camera (or navigate to `http://<YOUR_LAN_IP>:5173/`).
+```bash
+cp .env.example .env
+```
 
-5. **Build for production**:
+Edit `.env`:
+```env
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-supabase-publishable-or-anon-key
+```
+
+> **Security Note:** Never commit `.env` or expose your `service_role` secret key in the frontend or GitHub repository. Only `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` belong in `.env`.
+
+---
+
+## 💻 Local Run & Vercel Deployment
+
+### Run Locally
+```bash
+npm install
+npm run dev
+```
+
+### Production Build & Vercel Deployment
+The project includes [`vercel.json`](vercel.json) for SPA client-side route rewrites (`/` → `/index.html`).
+
+1. Install Vercel CLI (optional) or connect your GitHub repo in the Vercel Dashboard:
    ```bash
    npm run build
+   ```
+2. In Vercel Project Settings → **Environment Variables**, add:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+3. Deploy:
+   ```bash
+   vercel --prod
    ```
 
 ---
@@ -132,35 +250,42 @@
 
 ```text
 RESTO-POS/
-├── public/                     # Static food assets, icons, manifest, and SVG logo
-│   ├── items/                  # High-resolution Philippine dish photos & burger items
-│   ├── manifest.webmanifest    # Fullscreen PWA configuration
-│   └── zeticuz-logo.svg        # Developer signature logo
-├── server/
-│   └── posApi.ts               # Local LAN sync API (/api/pos/*) with atomic file storage
+├── public/
+│   ├── el-farm-logo.jpg              # EL Farm Cafe gold monogram logo
+│   ├── manifest.webmanifest          # Fullscreen PWA configuration
+│   └── zeticuz-logo.svg              # Developer signature mark
+├── supabase/
+│   └── schema.sql                    # Complete PostgreSQL schema, RLS, Storage & RPCs
 ├── src/
 │   ├── components/
-│   │   ├── AdminPanels.tsx     # TablesView, KitchenView, MenuManagerView, SettingsView
-│   │   ├── LoginScreen.tsx     # 3D Glassy Fast-Food Login with Role Selector
-│   │   ├── QrModal.tsx         # Live Scannable Wi-Fi QR Code Modal
-│   │   ├── ReceiptModal.tsx    # 80mm Thermal Official Receipt & Z-Reading Report
-│   │   ├── SalesCalendarView.tsx # Interactive Monthly Sales Calendar & Day Ledger
-│   │   └── ui.tsx              # Large touch buttons, modals, stat cards, fullscreen hook
+│   │   ├── EmployeesAttendanceView.tsx # Cashier CRUD, Attendance Calendar & Bonus Leaderboard
+│   │   ├── LoginScreen.tsx           # Role-based /login portal
+│   │   ├── MenuManagerView.tsx       # Menu CRUD + menu-images Storage upload/delete
+│   │   ├── OrderEditorModal.tsx      # Post-submit order item/qty editor (reconciles stock)
+│   │   ├── PayrollView.tsx           # Lamitan BARMM-05 cutoff calculator & OT logger
+│   │   ├── QrModal.tsx               # Multi-device QR connect modal
+│   │   ├── ReceiptModal.tsx          # 80mm Official Receipt, Z-Reading & BARMM-05 Payslip
+│   │   ├── SalesCalendarView.tsx     # Monthly Sales Calendar & day order ledger
+│   │   ├── StoreSettingsView.tsx     # Branding, TIN & BARMM-05 presets
+│   │   └── ui.tsx                    # Touch buttons, modals, BrandLogo & fullscreen hooks
 │   ├── data/
-│   │   ├── posData.ts          # Core types, Philippine menu items, Manila date helpers
-│   │   └── seed.ts             # Deterministic 45-day sales & expense generator
+│   │   └── posData.ts                # Supabase types, BARMM-05 presets & Manila date helpers
 │   ├── lib/
-│   │   ├── merge.ts            # CRDT state merger & Official Receipt number assigner
-│   │   ├── pricing.ts          # Philippine VAT-inclusive & Senior/PWD calculation engine
-│   │   └── usePosStore.ts      # Multi-device sync hook with offline queueing
-│   ├── App.tsx                 # Master POS application layout and navigation
-│   ├── index.css               # 3D glass styles, touch utilities, and 80mm print rules
-│   └── main.tsx                # React entry point
-├── index.html                  # HTML5 shell with PWA fullscreen meta tags & Google fonts
-├── package.json                # Dependencies and build scripts
-├── vite.config.ts              # Vite configuration with posApiPlugin LAN endpoints
-├── LICENSE                     # MIT License
-└── README.md                   # Complete system documentation
+│   │   ├── AuthContext.tsx           # Session auth, RLS profile & auto attendance shift logs
+│   │   ├── pricing.ts                # 12% VAT-inclusive & Senior/PWD (RA 9994) math
+│   │   └── supabase.ts               # Supabase client, ephemeral signup client & Storage API
+│   ├── pages/
+│   │   ├── AdminDashboardPage.tsx    # /admin management dashboard & live today banner
+│   │   ├── CashierPage.tsx           # /cashier touch register, CRM, checkout & order drawer
+│   │   ├── CrewKitchenPage.tsx       # /crew real-time Kitchen Display System (KDS)
+│   │   └── QueueDisplayPage.tsx      # /display Smart TV Preparing / Now Serving split board
+│   ├── App.tsx                       # React Router DOM v6 routes & ProtectedRoute guards
+│   ├── index.css                     # Glass UI utilities & 80mm thermal @media print styles
+│   └── main.tsx                      # Entry point
+├── .env.example                      # Safe environment template
+├── vercel.json                       # Vercel SPA rewrite configuration
+├── LICENSE                           # MIT License
+└── README.md                         # Complete setup & system guide
 ```
 
 ---

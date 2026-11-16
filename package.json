@@ -2,7 +2,7 @@
   "name": "resto-pos",
   "private": true,
   "version": "1.0.0",
-  "description": "Ligaya Kusina Express — Advanced Restaurant & Fast-Food Point of Sale (POS) System with Multi-Device Wi-Fi LAN Sync, Scannable QR Connect, and Sales Calendar.",
+  "description": "EL Farm Cafe — Cloud Supabase Restaurant & Cafe Point of Sale System with Multi-Device Queue TV Display, Attendance Calendar, and BARMM-05 Payroll.",
   "type": "module",
   "scripts": {
     "dev": "vite --port 5173 --host",
@@ -10,10 +10,12 @@
     "preview": "vite preview --port 4173 --host"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.119.0",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-qr-code": "^2.0.18"
+    "react-qr-code": "^2.0.18",
+    "react-router-dom": "^7.18.5"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
