@@ -274,10 +274,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('cashier_id', profile.id)
         .is('logout_time', null);
     }
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // ignore network abort on signout
+    }
+    try {
+      Object.keys(localStorage).forEach((k) => {
+        if (k.startsWith('sb-') && k.endsWith('-auth-token')) {
+          localStorage.removeItem(k);
+        }
+      });
+    } catch {
+      // ignore storage access issues
+    }
     setActiveShift(null);
     setProfile(null);
     setUser(null);
-    await supabase.auth.signOut();
   }, [profile]);
 
   return (

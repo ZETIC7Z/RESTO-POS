@@ -48,5 +48,5 @@
 - [`src/lib/AuthContext.tsx`](file:///c:/Users/ZETICUZ/Music/pos%20resto/src/lib/AuthContext.tsx) — Supabase Auth session, `profiles` verification, `store_settings`, and automatic Cashier `attendance_logs` Time-In / Time-Out
 - [`src/data/posData.ts`](file:///c:/Users/ZETICUZ/Music/pos%20resto/src/data/posData.ts) — Cloud database interfaces, Philippine Peso formatters, BARMM-05 presets, and `Asia/Manila` date/calendar helpers
 - [`src/lib/pricing.ts`](file:///c:/Users/ZETICUZ/Music/pos%20resto/src/lib/pricing.ts) — Philippine 12% VAT-inclusive & Senior Citizen/PWD (RA 9994) engine
-- [`src/components/ReceiptModal.tsx`](file:///c:/Users/ZETICUZ/Music/pos%20resto/src/components/ReceiptModal.tsx) — 80mm Official Receipt, Daily Z-Reading, and 80mm BARMM-05 Payslip printer
+- [`src/components/ReceiptModal.tsx`](file:///c:/Users/ZETICUZ/Music/pos%20resto/src/components/ReceiptModal.tsx) — 80mm Official Receipt, Daily Z-Reading, and 80mm BARMM-05 Payslip printer rendered via `document.body` `<PrintPortal>` (`#pos-print-root`) so `@media print` never clips inside modal `overflow-hidden` / `backdrop-filter` containers
 - [`src/components/OrderEditorModal.tsx`](file:///c:/Users/ZETICUZ/Music/pos%20resto/src/components/OrderEditorModal.tsx) — Live submitted-order editor calling `update_submitted_order` RPC
