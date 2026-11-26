@@ -285,6 +285,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.removeItem(k);
         }
       });
+      Object.keys(sessionStorage).forEach((k) => {
+        if (k.startsWith('sb-') && k.endsWith('-auth-token')) {
+          sessionStorage.removeItem(k);
+        }
+      });
     } catch {
       // ignore storage access issues
     }

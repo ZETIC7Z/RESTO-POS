@@ -11,11 +11,25 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 
 export const MENU_IMAGES_BUCKET = 'menu-images';
 
+// Purge legacy localStorage Supabase tokens so closing a tab clears POS authentication.
+if (typeof window !== 'undefined') {
+  try {
+    Object.keys(window.localStorage).forEach((k) => {
+      if (k.startsWith('sb-') && k.endsWith('-auth-token')) {
+        window.localStorage.removeItem(k);
+      }
+    });
+  } catch {
+    // ignore storage access issues
+  }
+}
+
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
+    storage: typeof window !== 'undefined' ? window.sessionStorage : undefined,
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true,
+    detectSessionInUrl: false,
   },
 });
 
