@@ -14,6 +14,7 @@
 - **Database Setup Script**: [`supabase/schema.sql`](file:///c:/Users/ZETICUZ/Music/pos%20resto/supabase/schema.sql)
 - **Vercel SPA Routing**: [`vercel.json`](file:///c:/Users/ZETICUZ/Music/pos%20resto/vercel.json) rewrites all routes to `/index.html`
 - **Storage Bucket**: `menu-images` (public bucket for menu dish photography; deleted automatically when a dish is deleted)
+- **Official Menu Categories (7)**: `Signature Coffee`, `Matcha & Smoothies`, `Silogs & Goto`, `Non-Pork Specials`, `Pork Favorites`, `Snacks & Delicacies`, `Salu-Salo Feasts` (synced with the 49-item EL Farm Cafe official menu catalog in Supabase `products` & `menu-images` Storage)
 - **Realtime Publication Tables**: `profiles`, `attendance_logs`, `products`, `orders`
 
 ### Database Tables & Key RPC Functions

@@ -25,7 +25,7 @@ export function MenuManagerView({
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<ProductFormState>({
     name: '',
-    category: 'Silog & Rice',
+    category: 'Signature Coffee',
     price: 120,
     stock_qty: 50,
     is_available: true,
@@ -48,7 +48,7 @@ export function MenuManagerView({
   const openAdd = () => {
     setForm({
       name: '',
-      category: 'Silog & Rice',
+      category: 'Signature Coffee',
       price: 120,
       stock_qty: 50,
       is_available: true,
@@ -66,7 +66,7 @@ export function MenuManagerView({
       name: p.name,
       category: (CATEGORIES.some((c) => c.id === p.category)
         ? p.category
-        : 'Silog & Rice') as CategoryId,
+        : 'Signature Coffee') as CategoryId,
       price: Number(p.price),
       stock_qty: Number(p.stock_qty),
       is_available: p.is_available,

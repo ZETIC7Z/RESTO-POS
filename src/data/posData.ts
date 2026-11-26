@@ -5,12 +5,13 @@
 export type Role = 'admin' | 'cashier';
 
 export type CategoryId =
-  | 'Silog & Rice'
-  | 'Chicken'
-  | 'Burgers'
-  | 'Noodles'
-  | 'Drinks'
-  | 'Desserts';
+  | 'Signature Coffee'
+  | 'Matcha & Smoothies'
+  | 'Silogs & Goto'
+  | 'Non-Pork Specials'
+  | 'Pork Favorites'
+  | 'Snacks & Delicacies'
+  | 'Salu-Salo Feasts';
 
 export type PaymentMethod = 'Cash' | 'GCash' | 'Maya' | 'Card';
 export type DiscountType = 'none' | 'senior_pwd' | 'promo';
@@ -133,12 +134,13 @@ export interface CartLine {
 // ── Constants ────────────────────────────────────────────────
 
 export const CATEGORIES: { id: CategoryId; label: string; icon: string }[] = [
-  { id: 'Silog & Rice', label: 'Silog & Rice', icon: 'rice_bowl' },
-  { id: 'Chicken', label: 'Chicken', icon: 'kebab_dining' },
-  { id: 'Burgers', label: 'Burgers', icon: 'lunch_dining' },
-  { id: 'Noodles', label: 'Noodles & Pancit', icon: 'ramen_dining' },
-  { id: 'Drinks', label: 'Drinks', icon: 'local_cafe' },
-  { id: 'Desserts', label: 'Desserts', icon: 'icecream' },
+  { id: 'Signature Coffee', label: 'Signature Coffee', icon: 'local_cafe' },
+  { id: 'Matcha & Smoothies', label: 'Matcha & Smoothies', icon: 'blender' },
+  { id: 'Silogs & Goto', label: 'Silogs & Goto', icon: 'rice_bowl' },
+  { id: 'Non-Pork Specials', label: 'Non-Pork Specials', icon: 'dinner_dining' },
+  { id: 'Pork Favorites', label: 'Pork Favorites', icon: 'outdoor_grill' },
+  { id: 'Snacks & Delicacies', label: 'Snacks & Delicacies', icon: 'bakery_dining' },
+  { id: 'Salu-Salo Feasts', label: 'Salu-Salo Feasts', icon: 'restaurant' },
 ];
 
 export const PAYMENT_METHODS: { id: PaymentMethod; icon: string }[] = [

@@ -238,7 +238,7 @@ export function AdminDashboardPage() {
             onClick={toggleFs}
             className="!px-3"
           />
-          <div className="hidden items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.05] px-2.5 py-1.5 2xl:flex">
+          <div className="hidden items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.05] px-2.5 py-1.5 sm:flex">
             <Icon name="verified_user" className="text-[18px] text-emerald-300" />
             <div className="leading-tight">
               <p className="text-xs font-extrabold text-white">{profile.full_name}</p>
