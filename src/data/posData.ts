@@ -50,6 +50,69 @@ export interface Product {
   created_at: string;
 }
 
+export interface AddonScope {
+  categories: CategoryId[];
+  productIds: string[];
+  excludedProductIds: string[];
+}
+
+export interface AddonItem {
+  id: string;
+  name: string;
+  price: number;
+  stock_qty: number;
+  image_url: string | null;
+  is_available: boolean;
+  scope: AddonScope;
+}
+
+export const ADDON_PREFIX = 'ADDON::';
+
+export function isAddonProduct(product: Pick<Product, 'category'> | null | undefined): boolean {
+  return Boolean(product?.category && product.category.startsWith(ADDON_PREFIX));
+}
+
+export function encodeAddonCategory(scope: AddonScope): string {
+  return ADDON_PREFIX + JSON.stringify({
+    categories: Array.from(new Set(scope.categories || [])),
+    productIds: Array.from(new Set(scope.productIds || [])),
+    excludedProductIds: Array.from(new Set(scope.excludedProductIds || [])),
+  });
+}
+
+export function parseAddonProduct(product: Product): AddonItem {
+  let parsed: Partial<AddonScope> = {};
+  if (product.category?.startsWith(ADDON_PREFIX)) {
+    try {
+      parsed = JSON.parse(product.category.slice(ADDON_PREFIX.length)) as Partial<AddonScope>;
+    } catch {
+      parsed = {};
+    }
+  }
+  return {
+    id: product.id,
+    name: product.name,
+    price: Number(product.price) || 0,
+    stock_qty: Number(product.stock_qty) || 0,
+    image_url: product.image_url,
+    is_available: product.is_available,
+    scope: {
+      categories: Array.isArray(parsed.categories) ? (parsed.categories as CategoryId[]) : [],
+      productIds: Array.isArray(parsed.productIds) ? parsed.productIds : [],
+      excludedProductIds: Array.isArray(parsed.excludedProductIds) ? parsed.excludedProductIds : [],
+    },
+  };
+}
+
+export function getApplicableAddons(product: Product, addons: AddonItem[]): AddonItem[] {
+  return addons.filter((a) => {
+    if (!a.is_available || a.stock_qty <= 0) return false;
+    if (a.scope.excludedProductIds.includes(product.id)) return false;
+    if (a.scope.productIds.includes(product.id)) return true;
+    return a.scope.categories.includes(product.category as CategoryId);
+  });
+}
+
 export interface Customer {
   id: string;
   name: string;
@@ -123,12 +186,14 @@ export interface StoreSettings {
 }
 
 export interface CartLine {
+  line_key: string;
   product_id: string;
   product_name: string;
   unit_price: number;
   quantity: number;
   image_url: string | null;
   max_stock: number;
+  selected_addons?: { id: string; name: string; price: number }[];
 }
 
 // ── Constants ────────────────────────────────────────────────

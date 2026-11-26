@@ -198,8 +198,21 @@ values ('menu-images', 'menu-images', true)
 on conflict (id) do update set public = true;
 
 drop policy if exists "Public Menu Images Access" on storage.objects;
-create policy "Public Menu Images Access" on storage.objects
-  for all using (bucket_id = 'menu-images') with check (bucket_id = 'menu-images');
+drop policy if exists "Public read menu images" on storage.objects;
+create policy "Public read menu images" on storage.objects
+  for select using (bucket_id = 'menu-images');
+
+drop policy if exists "Admin manage menu images" on storage.objects;
+create policy "Admin manage menu images" on storage.objects
+  for insert with check (bucket_id = 'menu-images' and public.is_admin());
+
+drop policy if exists "Admin update menu images" on storage.objects;
+create policy "Admin update menu images" on storage.objects
+  for update using (bucket_id = 'menu-images' and public.is_admin());
+
+drop policy if exists "Admin delete menu images" on storage.objects;
+create policy "Admin delete menu images" on storage.objects
+  for delete using (bucket_id = 'menu-images' and public.is_admin());
 
 -- 6. Supabase Realtime Publication
 do $$
@@ -455,6 +468,9 @@ begin
 end;
 $$;
 
+revoke all on function public.process_checkout(uuid, text, uuid, text, text, text, numeric, numeric, numeric, numeric, numeric, numeric, jsonb, jsonb) from public, anon;
+grant execute on function public.process_checkout(uuid, text, uuid, text, text, text, numeric, numeric, numeric, numeric, numeric, numeric, jsonb, jsonb) to authenticated;
+
 -- Edit already-submitted order and automatically reconcile product stock deltas
 create or replace function public.update_submitted_order(
   p_order_id uuid,
@@ -475,6 +491,10 @@ declare
   v_old_item record;
   v_new_item jsonb;
 begin
+  if auth.uid() is null then
+    raise exception 'Unauthorized: Authentication required';
+  end if;
+
   for v_old_item in select product_id, quantity from public.order_items where order_id = p_order_id loop
     update public.products set stock_qty = stock_qty + v_old_item.quantity where id = v_old_item.product_id;
   end loop;
@@ -507,6 +527,9 @@ begin
 end;
 $$;
 
+revoke all on function public.update_submitted_order(uuid, jsonb, numeric, numeric, numeric, numeric, numeric, jsonb) from public, anon;
+grant execute on function public.update_submitted_order(uuid, jsonb, numeric, numeric, numeric, numeric, numeric, jsonb) to authenticated;
+
 -- Cancel / Void an order and restore inventory stock
 create or replace function public.cancel_order(p_order_id uuid)
 returns void
@@ -518,6 +541,10 @@ declare
   v_item record;
   v_status text;
 begin
+  if auth.uid() is null then
+    raise exception 'Unauthorized: Authentication required';
+  end if;
+
   select status into v_status from public.orders where id = p_order_id;
   if v_status = 'cancelled' then
     return;
@@ -530,3 +557,6 @@ begin
   update public.orders set status = 'cancelled' where id = p_order_id;
 end;
 $$;
+
+revoke all on function public.cancel_order(uuid) from public, anon;
+grant execute on function public.cancel_order(uuid) to authenticated;

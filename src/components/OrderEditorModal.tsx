@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   fmtDateTime,
+  isAddonProduct,
   OrderRow,
   peso,
   Product,
@@ -60,6 +61,7 @@ export function OrderEditorModal({
     () =>
       products.filter(
         (p) =>
+          !isAddonProduct(p) &&
           p.is_available &&
           p.stock_qty > 0 &&
           !lines.some((l) => l.product_id === p.id)

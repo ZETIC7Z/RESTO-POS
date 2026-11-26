@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BrandLogo, Btn, cx, DeveloperFooter, Icon, useFullscreen, useNow } from '../components/ui';
+import { BrandLogo, Btn, cx, Icon, useFullscreen, useNow } from '../components/ui';
 import { dayKey, fmtDateTime, fmtTime, OrderRow } from '../data/posData';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -135,8 +135,8 @@ export function CrewKitchenPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-        <div className="mx-auto max-w-7xl">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-5">
+        <div className="mx-auto max-w-[1440px]">
           {shown.length === 0 ? (
             <div className="glass flex h-80 flex-col items-center justify-center rounded-[28px] p-8 text-center">
               <Icon name="check_circle" className="text-6xl text-emerald-400/50" />
@@ -150,7 +150,7 @@ export function CrewKitchenPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {shown.map((o) => {
                 const isReady = o.status === 'ready';
                 const items =
@@ -166,7 +166,7 @@ export function CrewKitchenPage() {
                   <div
                     key={o.id}
                     className={cx(
-                      'glass flex flex-col justify-between rounded-[28px] border p-5',
+                      'glass flex flex-col justify-between rounded-[24px] border p-4',
                       o.status === 'preparing'
                         ? 'border-orange-400/60'
                         : isReady
@@ -209,18 +209,30 @@ export function CrewKitchenPage() {
                         </span>
                       </div>
 
-                      <ul className="mt-4 space-y-2 border-t border-white/10 pt-3">
-                        {items.map((ln) => (
-                          <li
-                            key={ln.id}
-                            className="flex items-center gap-2 text-base font-extrabold text-white"
-                          >
-                            <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-white/10 px-2 font-mono text-orange-300">
-                              {ln.quantity}x
-                            </span>
-                            <span>{ln.product_name}</span>
-                          </li>
-                        ))}
+                      <ul className="mt-3 space-y-2 border-t border-white/10 pt-3">
+                        {items.map((ln) => {
+                          const extraMatch = ln.product_name.match(/^(.*?)\s*\(\+\s*(.+)\)$/);
+                          const mainName = extraMatch ? extraMatch[1] : ln.product_name;
+                          const extrasText = extraMatch ? extraMatch[2] : null;
+                          return (
+                            <li
+                              key={ln.id}
+                              className="flex items-start gap-2 text-sm font-extrabold text-white sm:text-base"
+                            >
+                              <span className="inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 px-1.5 font-mono text-orange-300">
+                                {ln.quantity}x
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <span>{mainName}</span>
+                                {extrasText && (
+                                  <span className="mt-0.5 block rounded-lg bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold text-amber-300">
+                                    + {extrasText}
+                                  </span>
+                                )}
+                              </div>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
 
@@ -257,8 +269,6 @@ export function CrewKitchenPage() {
           )}
         </div>
       </main>
-
-      <DeveloperFooter className="border-t border-white/10" />
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Role } from '../data/posData';
 import { useAuth } from '../lib/AuthContext';
 import { QrModal } from './QrModal';
-import { BrandLogo, Btn, cx, DeveloperFooter, Icon, requestFullscreen, useFullscreen } from './ui';
+import { BrandLogo, Btn, cx, Icon, requestFullscreen, useFullscreen } from './ui';
 
 export function LoginScreen() {
   const { profile, storeSettings, loading, signIn } = useAuth();
@@ -269,8 +269,6 @@ export function LoginScreen() {
           </div>
         </div>
       </main>
-
-      <DeveloperFooter className="relative z-10" />
 
       {showQr && (
         <QrModal

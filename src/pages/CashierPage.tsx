@@ -7,13 +7,13 @@ import {
   BrandLogo,
   Btn,
   cx,
-  DeveloperFooter,
   Icon,
   Modal,
   useFullscreen,
   useNow,
 } from '../components/ui';
 import {
+  AddonItem,
   CartLine,
   CATEGORIES,
   CategoryId,
@@ -22,7 +22,10 @@ import {
   DiscountType,
   fmtDateTime,
   fmtTime,
+  getApplicableAddons,
+  isAddonProduct,
   OrderRow,
+  parseAddonProduct,
   PaymentMethod,
   PAYMENT_METHODS,
   peso,
@@ -80,6 +83,8 @@ export function CashierPage() {
   } | null>(null);
   const [showQr, setShowQr] = useState(false);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
+  const [customizingProduct, setCustomizingProduct] = useState<Product | null>(null);
+  const [selectedExtras, setSelectedExtras] = useState<Record<string, boolean>>({});
 
   const fetchProducts = useCallback(async () => {
     const { data, error } = await supabase
@@ -153,28 +158,54 @@ export function CashierPage() {
     };
   }, [fetchProducts, fetchCustomers, fetchTodayOrders]);
 
+  const menuProducts = useMemo(
+    () => products.filter((p) => !isAddonProduct(p)),
+    [products]
+  );
+
+  const addons = useMemo(
+    () => products.filter(isAddonProduct).map(parseAddonProduct),
+    [products]
+  );
+
   const visibleProducts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return products
+    return menuProducts
       .filter((p) => (selectedCategory === 'ALL' ? true : p.category === selectedCategory))
       .filter((p) =>
         q ? p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q) : true
       );
-  }, [products, selectedCategory, searchQuery]);
+  }, [menuProducts, selectedCategory, searchQuery]);
 
   const totals = useMemo(
     () => computeOrderTotals(cart, discountType, 12),
     [cart, discountType]
   );
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, chosenAddons: AddonItem[] = []) => {
     if (!product.is_available || product.stock_qty <= 0) return;
+    const sortedAddons = [...chosenAddons].sort((a, b) => a.name.localeCompare(b.name));
+    const extrasSum = sortedAddons.reduce((s, a) => s + a.price, 0);
+    const lineKey =
+      sortedAddons.length > 0
+        ? `${product.id}::${sortedAddons.map((a) => a.id).join(',')}`
+        : product.id;
+    const lineName =
+      sortedAddons.length > 0
+        ? `${product.name} (+ ${sortedAddons.map((a) => a.name).join(', ')})`
+        : product.name;
+    const unitPrice = Math.round((Number(product.price) + extrasSum) * 100) / 100;
+
     setCart((prev) => {
-      const existing = prev.find((l) => l.product_id === product.id);
+      const usedForProduct = prev
+        .filter((l) => l.product_id === product.id)
+        .reduce((s, l) => s + l.quantity, 0);
+      if (usedForProduct >= product.stock_qty) return prev;
+
+      const existing = prev.find((l) => l.line_key === lineKey);
       if (existing) {
-        if (existing.quantity >= product.stock_qty) return prev;
         return prev.map((l) =>
-          l.product_id === product.id
+          l.line_key === lineKey
             ? { ...l, quantity: l.quantity + 1, max_stock: product.stock_qty }
             : l
         );
@@ -182,30 +213,49 @@ export function CashierPage() {
       return [
         ...prev,
         {
+          line_key: lineKey,
           product_id: product.id,
-          product_name: product.name,
-          unit_price: Number(product.price),
+          product_name: lineName,
+          unit_price: unitPrice,
           quantity: 1,
           image_url: product.image_url,
           max_stock: product.stock_qty,
+          selected_addons: sortedAddons.map((a) => ({
+            id: a.id,
+            name: a.name,
+            price: a.price,
+          })),
         },
       ];
     });
   };
 
-  const adjustCartQty = (productId: string, delta: number) => {
-    const liveProd = products.find((p) => p.id === productId);
-    const stockCap = liveProd ? liveProd.stock_qty : 999;
+  const openExtrasModal = (product: Product) => {
+    setCustomizingProduct(product);
+    setSelectedExtras({});
+  };
 
-    setCart((prev) =>
-      prev
+  const adjustCartQty = (lineKey: string, delta: number) => {
+    setCart((prev) => {
+      const target = prev.find((l) => l.line_key === lineKey);
+      if (!target) return prev;
+      const liveProd = menuProducts.find((p) => p.id === target.product_id);
+      const stockCap = liveProd ? liveProd.stock_qty : target.max_stock || 999;
+
+      if (delta > 0) {
+        const usedTotal = prev
+          .filter((l) => l.product_id === target.product_id)
+          .reduce((s, l) => s + l.quantity, 0);
+        if (usedTotal >= stockCap) return prev;
+      }
+
+      return prev
         .map((l) => {
-          if (l.product_id !== productId) return l;
-          const next = Math.min(stockCap, l.quantity + delta);
-          return { ...l, quantity: next, max_stock: stockCap };
+          if (l.line_key !== lineKey) return l;
+          return { ...l, quantity: Math.max(0, l.quantity + delta), max_stock: stockCap };
         })
-        .filter((l) => l.quantity > 0)
-    );
+        .filter((l) => l.quantity > 0);
+    });
   };
 
   const clearCart = () => {
@@ -448,23 +498,23 @@ export function CashierPage() {
         </div>
       </header>
 
-      {/* Main Split POS Workspace */}
+      {/* Main Split POS Workspace (Tablet Landscape & Desktop Optimized) */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left: Categories + Live Menu Grid */}
-        <div className="flex flex-1 flex-col overflow-hidden p-3 sm:p-5">
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="relative flex-1 min-w-[220px]">
+        <div className="flex flex-1 flex-col overflow-hidden p-2.5 sm:p-4">
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="relative flex-1 min-w-[200px]">
                 <Icon
                   name="search"
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[20px] text-white/40"
+                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-white/40"
                 />
                 <input
                   type="search"
-                  placeholder="Search menu items..."
+                  placeholder="Search coffee, silog, bilao, snacks..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="input h-12 !pl-11 text-sm font-semibold"
+                  className="input h-10 !pl-10 text-xs sm:text-sm font-semibold"
                 />
               </div>
 
@@ -473,25 +523,25 @@ export function CashierPage() {
                 variant="primary"
                 icon="shopping_cart"
                 onClick={() => setMobileCartOpen(true)}
-                className="lg:hidden"
+                className="lg:hidden !h-10"
               >
                 Order ({cartItemCount}) · {peso(totals.totalAmount)}
               </Btn>
             </div>
 
-            <div className="flex gap-2 overflow-x-auto pb-1">
+            <div className="flex flex-wrap items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => setSelectedCategory('ALL')}
                 className={cx(
-                  'inline-flex h-12 shrink-0 items-center gap-2 rounded-2xl border px-4 text-sm font-extrabold transition active:scale-[0.97]',
+                  'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-xl border px-2.5 text-[11px] font-extrabold transition active:scale-[0.97]',
                   selectedCategory === 'ALL'
                     ? 'chip-active'
                     : 'border-white/10 bg-white/[0.04] text-white/75 hover:bg-white/[0.09]'
                 )}
               >
-                <Icon name="apps" className="text-[20px]" />
-                All ({products.length})
+                <Icon name="apps" className="text-[15px]" />
+                All ({menuProducts.length})
               </button>
               {CATEGORIES.map((cat) => {
                 const active = selectedCategory === cat.id;
@@ -501,13 +551,13 @@ export function CashierPage() {
                     type="button"
                     onClick={() => setSelectedCategory(cat.id)}
                     className={cx(
-                      'inline-flex h-12 shrink-0 items-center gap-2 rounded-2xl border px-4 text-sm font-extrabold transition active:scale-[0.97]',
+                      'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-xl border px-2.5 text-[11px] font-extrabold transition active:scale-[0.97]',
                       active
                         ? 'chip-active'
                         : 'border-white/10 bg-white/[0.04] text-white/75 hover:bg-white/[0.09]'
                     )}
                   >
-                    <Icon name={cat.icon} className="text-[20px]" />
+                    <Icon name={cat.icon} className="text-[15px]" />
                     {cat.label}
                   </button>
                 );
@@ -516,7 +566,7 @@ export function CashierPage() {
           </div>
 
           {/* Menu Grid */}
-          <div className="mt-4 flex-1 overflow-y-auto pr-1">
+          <div className="mt-3 flex-1 overflow-y-auto pr-1">
             {loadingMenu ? (
               <div className="flex h-64 items-center justify-center text-sm font-bold text-white/50">
                 Loading live menu from Supabase...
@@ -532,27 +582,37 @@ export function CashierPage() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4">
                 {visibleProducts.map((product) => {
                   const soldOut = !product.is_available || product.stock_qty <= 0;
-                  const inCart =
-                    cart.find((l) => l.product_id === product.id)?.quantity ?? 0;
+                  const inCart = cart
+                    .filter((l) => l.product_id === product.id)
+                    .reduce((s, l) => s + l.quantity, 0);
+                  const itemAddons = getApplicableAddons(product, addons);
 
                   return (
-                    <button
+                    <div
                       key={product.id}
-                      type="button"
-                      disabled={soldOut}
-                      onClick={() => addToCart(product)}
+                      onClick={() => {
+                        if (!soldOut) addToCart(product);
+                      }}
+                      role="button"
+                      tabIndex={soldOut ? -1 : 0}
+                      onKeyDown={(e) => {
+                        if (!soldOut && (e.key === 'Enter' || e.key === ' ')) {
+                          e.preventDefault();
+                          addToCart(product);
+                        }
+                      }}
                       className={cx(
-                        'glass-card group relative flex flex-col justify-between overflow-hidden rounded-[24px] p-3 text-left transition active:scale-[0.98]',
+                        'glass-card group relative flex flex-col justify-between overflow-hidden rounded-[20px] p-2.5 text-left transition active:scale-[0.985]',
                         soldOut
                           ? 'cursor-not-allowed opacity-45'
                           : 'cursor-pointer hover:border-orange-400/50 hover:bg-white/[0.07]'
                       )}
                     >
                       <div>
-                        <div className="relative h-32 w-full overflow-hidden rounded-2xl bg-black/40 sm:h-36">
+                        <div className="relative h-24 w-full overflow-hidden rounded-xl bg-black/40 sm:h-28">
                           {product.image_url ? (
                             <img
                               src={product.image_url}
@@ -568,13 +628,13 @@ export function CashierPage() {
                             </div>
                           )}
                           {inCart > 0 && (
-                            <span className="absolute right-2 top-2 flex h-7 min-w-7 items-center justify-center rounded-full bg-emerald-500 px-2 text-xs font-extrabold text-black shadow-lg">
+                            <span className="absolute right-2 top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-emerald-500 px-1.5 text-[11px] font-extrabold text-black shadow-lg">
                               {inCart}x
                             </span>
                           )}
                           <span
                             className={cx(
-                              'absolute bottom-2 right-2 rounded-lg px-2 py-0.5 text-[10px] font-extrabold backdrop-blur-sm',
+                              'absolute bottom-1.5 right-1.5 rounded-lg px-2 py-0.5 text-[10px] font-extrabold backdrop-blur-sm',
                               soldOut
                                 ? 'bg-red-600/90 text-white'
                                 : 'bg-black/75 text-white/85'
@@ -584,36 +644,58 @@ export function CashierPage() {
                           </span>
                         </div>
 
-                        <p className="mt-2.5 text-[10px] font-bold uppercase tracking-wider text-orange-300/80">
+                        <p className="mt-2 text-[9px] font-bold uppercase tracking-wider text-orange-300/80">
                           {product.category}
                         </p>
-                        <h3 className="line-clamp-1 text-sm font-extrabold text-white sm:text-base">
+                        <h3 className="line-clamp-1 text-xs font-extrabold text-white sm:text-sm">
                           {product.name}
                         </h3>
                       </div>
 
-                      <div className="mt-3 flex items-center justify-between pt-1">
-                        <span className="text-base font-extrabold text-emerald-300 tabular-nums sm:text-lg">
+                      <div className="mt-2 flex items-center justify-between gap-1.5 pt-1">
+                        <span className="text-sm font-extrabold text-emerald-300 tabular-nums sm:text-base">
                           {peso(product.price)}
                         </span>
-                        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-b from-[#ff9a4d] to-[#ff5a1f] text-white shadow">
-                          <Icon name="add" className="text-[24px]" />
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {itemAddons.length > 0 && (
+                            <button
+                              type="button"
+                              disabled={soldOut}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openExtrasModal(product);
+                              }}
+                              className="h-9 rounded-xl border border-white/15 bg-white/[0.08] px-2.5 text-[11px] font-extrabold text-white transition hover:border-orange-300/50 hover:bg-white/[0.15] active:scale-95 disabled:opacity-40"
+                            >
+                              +Extras
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            disabled={soldOut}
+                            aria-label={`Add ${product.name}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!soldOut) addToCart(product);
+                            }}
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-[#ff9a4d] to-[#ff5a1f] text-white shadow active:scale-95 disabled:opacity-40"
+                          >
+                            <Icon name="add" className="text-[20px]" />
+                          </button>
+                        </div>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
             )}
           </div>
-
-          <DeveloperFooter className="mt-2 border-t border-white/10 pt-2" />
         </div>
 
         {/* Right: Order Ticket & Checkout Drawer */}
         <aside
           className={cx(
-            'glass z-30 flex w-full flex-col border-l border-white/10 bg-[#10131c]/95 lg:static lg:w-[410px] xl:w-[440px]',
+            'glass z-30 flex w-full flex-col border-l border-white/10 bg-[#10131c]/95 lg:static lg:w-[360px] xl:w-[400px]',
             mobileCartOpen ? 'fixed inset-0' : 'hidden lg:flex'
           )}
         >
@@ -709,9 +791,13 @@ export function CashierPage() {
                 </p>
               </div>
             ) : (
-              cart.map((ln) => (
+              cart.map((ln) => {
+                const usedForProduct = cart
+                  .filter((c) => c.product_id === ln.product_id)
+                  .reduce((s, c) => s + c.quantity, 0);
+                return (
                 <div
-                  key={ln.product_id}
+                  key={ln.line_key}
                   className="glass-card flex items-center justify-between gap-2.5 rounded-2xl p-2.5"
                 >
                   {ln.image_url ? (
@@ -740,27 +826,28 @@ export function CashierPage() {
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
-                      onClick={() => adjustCartQty(ln.product_id, -1)}
+                      onClick={() => adjustCartQty(ln.line_key, -1)}
                       aria-label={`Decrease ${ln.product_name}`}
-                      className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] text-xl font-extrabold text-white active:scale-95"
+                      className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] text-lg font-extrabold text-white active:scale-95"
                     >
                       −
                     </button>
-                    <span className="w-6 text-center text-sm font-extrabold tabular-nums">
+                    <span className="w-5 text-center text-sm font-extrabold tabular-nums">
                       {ln.quantity}
                     </span>
                     <button
                       type="button"
-                      disabled={ln.quantity >= ln.max_stock}
-                      onClick={() => adjustCartQty(ln.product_id, 1)}
+                      disabled={usedForProduct >= ln.max_stock}
+                      onClick={() => adjustCartQty(ln.line_key, 1)}
                       aria-label={`Increase ${ln.product_name}`}
-                      className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500 text-xl font-extrabold text-white disabled:opacity-40 active:scale-95"
+                      className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500 text-lg font-extrabold text-white disabled:opacity-40 active:scale-95"
                     >
                       +
                     </button>
                   </div>
                 </div>
-              ))
+                );
+              })
             )}
           </div>
 
@@ -1179,13 +1266,95 @@ export function CashierPage() {
       {editingOrder && (
         <OrderEditorModal
           order={editingOrder}
-          products={products}
+          products={menuProducts}
           onClose={() => setEditingOrder(null)}
           onSaved={async () => {
             await Promise.all([fetchTodayOrders(), fetchProducts()]);
           }}
         />
       )}
+
+      {customizingProduct && (() => {
+        const modalAddons = getApplicableAddons(customizingProduct, addons);
+        const chosenList = modalAddons.filter((a) => Boolean(selectedExtras[a.id]));
+        const extrasTotal = chosenList.reduce((s, a) => s + a.price, 0);
+        const combinedPrice = Number(customizingProduct.price) + extrasTotal;
+
+        return (
+          <Modal
+            title={`Customize · ${customizingProduct.name}`}
+            subtitle={`Base price ${peso(customizingProduct.price)} — tap extras to include`}
+            onClose={() => setCustomizingProduct(null)}
+          >
+            <div className="space-y-4">
+              {modalAddons.length === 0 ? (
+                <p className="py-4 text-center text-xs text-white/55">
+                  No extras configured for this item yet.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                  {modalAddons.map((addon) => {
+                    const checked = Boolean(selectedExtras[addon.id]);
+                    return (
+                      <button
+                        key={addon.id}
+                        type="button"
+                        onClick={() =>
+                          setSelectedExtras((prev) => ({
+                            ...prev,
+                            [addon.id]: !prev[addon.id],
+                          }))
+                        }
+                        className={cx(
+                          'flex items-center justify-between gap-2.5 rounded-2xl border px-3.5 py-3 text-left transition active:scale-[0.98]',
+                          checked
+                            ? 'border-amber-400/75 bg-amber-500/20 text-white shadow-[0_0_20px_rgba(251,146,60,0.22)]'
+                            : 'border-white/15 bg-white/[0.04] text-white/85 hover:bg-white/[0.08]'
+                        )}
+                      >
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          {addon.image_url ? (
+                            <img
+                              src={addon.image_url}
+                              alt={addon.name}
+                              className="h-8 w-8 shrink-0 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10">
+                              <Icon name="add_circle" className="text-[18px] text-orange-300" />
+                            </span>
+                          )}
+                          <span className="truncate text-sm font-extrabold">{addon.name}</span>
+                        </div>
+                        <span className="shrink-0 font-mono text-sm font-extrabold text-amber-300">
+                          +{peso(addon.price)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <Btn size="lg" variant="ghost" onClick={() => setCustomizingProduct(null)}>
+                  Cancel
+                </Btn>
+                <Btn
+                  size="lg"
+                  variant="success"
+                  icon="add_shopping_cart"
+                  onClick={() => {
+                    addToCart(customizingProduct, chosenList);
+                    setCustomizingProduct(null);
+                  }}
+                >
+                  Add to Order ({peso(combinedPrice)})
+                </Btn>
+              </div>
+            </div>
+          </Modal>
+        );
+      })()}
 
       {receiptState && (
         <ReceiptModal

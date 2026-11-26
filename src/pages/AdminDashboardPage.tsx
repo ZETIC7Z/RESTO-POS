@@ -9,7 +9,6 @@ import {
   BrandLogo,
   Btn,
   cx,
-  DeveloperFooter,
   Icon,
   Stat,
   useFullscreen,
@@ -382,8 +381,6 @@ export function AdminDashboardPage() {
               )}
             </>
           )}
-
-          <DeveloperFooter className="pt-2" />
         </div>
       </main>
 
