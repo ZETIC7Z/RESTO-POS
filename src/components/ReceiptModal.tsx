@@ -97,7 +97,7 @@ export function ReceiptModal({
         <img
           src={LOGO_SRC}
           alt={snap.store_name || settings.store_name}
-          className="mx-auto mb-1.5 h-11 w-11 rounded-lg object-cover"
+          className={isPrintCopy ? 'mx-auto mb-1.5 h-12 w-12 rounded-lg object-cover' : 'mx-auto mb-1.5 h-11 w-11 rounded-lg object-cover'}
         />
         <p className="text-base font-extrabold uppercase tracking-tight text-black">
           {snap.store_name || settings.store_name}
@@ -207,7 +207,7 @@ export function ReceiptModal({
             value={`${settings.store_name}|${order.or_number}|${Number(
               order.total_amount
             ).toFixed(2)}|${order.created_at}`}
-            size={84}
+            size={isPrintCopy ? 104 : 84}
             level="M"
             bgColor="#ffffff"
             fgColor="#000000"

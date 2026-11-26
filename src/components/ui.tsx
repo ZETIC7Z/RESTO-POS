@@ -225,7 +225,7 @@ export function DeveloperFooter({ className }: { className?: string }) {
       <div className="flex flex-wrap items-center justify-center gap-2">
         <img src="/zeticuz-logo.svg" alt="ZETICUZ" className="h-4 w-4 opacity-85" />
         <span className="font-semibold tracking-wide text-white/70">
-          SITE DEVELOPED BY: Sam Pangilinan · © 2026
+          SITE DEVELOPED BY: Sam Pangilinan · © {new Date().getFullYear()}
         </span>
         <button
           type="button"

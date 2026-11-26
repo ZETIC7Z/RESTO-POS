@@ -100,16 +100,19 @@
   display: none;
 }
 
-/* 80mm thermal & PDF/A4 universal print output */
+/* 80mm thermal & PDF receipt full-width output */
 @media print {
   @page {
-    margin: 5mm;
+    size: 80mm auto;
+    margin: 0mm;
   }
   html,
   body {
     margin: 0 !important;
     padding: 0 !important;
-    width: 100% !important;
+    width: 80mm !important;
+    min-width: 80mm !important;
+    max-width: 80mm !important;
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
@@ -125,22 +128,26 @@
   #pos-print-root {
     display: block !important;
     position: static !important;
-    width: 100% !important;
+    width: 80mm !important;
+    max-width: 80mm !important;
     height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
     overflow: visible !important;
     background: #ffffff !important;
     color: #000000 !important;
   }
   #pos-print-root .pos-print-sheet {
-    width: 74mm !important;
-    max-width: 100% !important;
+    width: 76mm !important;
+    max-width: 76mm !important;
     margin: 0 auto !important;
-    padding: 3mm 2mm !important;
+    padding: 3.5mm 2.5mm 6mm !important;
     background: #ffffff !important;
     color: #000000 !important;
     font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-    font-size: 11.5px !important;
-    line-height: 1.38 !important;
+    font-size: 12.5px !important;
+    line-height: 1.42 !important;
+    font-weight: 600 !important;
     overflow: visible !important;
     box-shadow: none !important;
     border-radius: 0 !important;
