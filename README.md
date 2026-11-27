@@ -304,3 +304,15 @@ SITE DEVELOPED BY: Sam Pangilinan · © 2026
 
 - **Portfolio**: [https://www.zeticuz.xyz/](https://www.zeticuz.xyz/)
 - **GitHub**: [@ZETIC7Z](https://github.com/ZETIC7Z)
+
+---
+
+## ⭐ Star History
+
+<a href="https://star-history.com/#ZETIC7Z/RESTO-POS&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=ZETIC7Z/RESTO-POS&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=ZETIC7Z/RESTO-POS&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=ZETIC7Z/RESTO-POS&type=Date" />
+ </picture>
+</a>
