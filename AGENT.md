@@ -51,3 +51,10 @@
 - [`src/lib/pricing.ts`](file:///c:/Users/ZETICUZ/Music/pos%20resto/src/lib/pricing.ts) — Philippine 12% VAT-inclusive & Senior Citizen/PWD (RA 9994) engine
 - [`src/components/ReceiptModal.tsx`](file:///c:/Users/ZETICUZ/Music/pos%20resto/src/components/ReceiptModal.tsx) — 80mm Official Receipt, Daily Z-Reading, and 80mm BARMM-05 Payslip printer rendered via `document.body` `<PrintPortal>` (`#pos-print-root`) so `@media print` never clips inside modal `overflow-hidden` / `backdrop-filter` containers
 - [`src/components/OrderEditorModal.tsx`](file:///c:/Users/ZETICUZ/Music/pos%20resto/src/components/OrderEditorModal.tsx) — Live submitted-order editor calling `update_submitted_order` RPC
+
+## 5. Mandatory GitHub Repository & Release Standard
+- Every new or updated GitHub repository under `ZETIC7Z` MUST include:
+  - An official `MIT` `LICENSE` file (`Copyright (c) 2026 Sam Pangilinan (ZETICUZ)`).
+  - A `## ⭐ Star History` dark/light adaptive chart at the bottom of `README.md` (`https://api.star-history.com/svg?repos=ZETIC7Z/<REPO>&type=Date`).
+  - Complete GitHub repository metadata (`description`, live `homepage` URL, and 12–18 accurate discovery `topics`).
+  - GitHub profile (`ZETIC7Z/ZETIC7Z`) branded as **`Founder of ZETICUZ`**.
